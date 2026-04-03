@@ -29,12 +29,13 @@ export default function Moon() {
     const dy = flybyVector.y / maxDist;
     const dz = flybyVector.z / maxDist;
 
-    // Offset Moon further from Earth along that direction
-    // ~10,637 km (8,900 surface + 1,737 radius) from spacecraft → Moon center
+    // Moon is CLOSER to Earth than the flyby point — spacecraft passes
+    // behind the Moon's far side at ~8,900 km above surface.
+    // Offset Moon TOWARD Earth by ~10,637 km (8,900 + 1,737 radius).
     const offsetKm = 10637;
-    const moonX = (flybyVector.x + dx * offsetKm) / SCALE_FACTOR;
-    const moonY = (flybyVector.y + dy * offsetKm) / SCALE_FACTOR;
-    const moonZ = (flybyVector.z + dz * offsetKm) / SCALE_FACTOR;
+    const moonX = (flybyVector.x - dx * offsetKm) / SCALE_FACTOR;
+    const moonY = (flybyVector.y - dy * offsetKm) / SCALE_FACTOR;
+    const moonZ = (flybyVector.z - dz * offsetKm) / SCALE_FACTOR;
 
     return [moonX, moonY, moonZ];
   }, [oemData]);

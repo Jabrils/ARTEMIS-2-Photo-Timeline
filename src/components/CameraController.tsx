@@ -38,7 +38,7 @@ function computePlanView(oemData: StateVector[], isMobile: boolean) {
   const cy = (minY + maxY) / 2;
   const cz = (minZ + maxZ) / 2;
   const range = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
-  const dist = range * (isMobile ? 1.3 : 1.0);
+  const dist = range * (isMobile ? 1.8 : 1.4);
 
   // Find orbital plane normal using cross product of two trajectory vectors
   const i0 = 0;
@@ -153,9 +153,9 @@ export default function CameraController() {
           // Moon is offset from flyby point (see Moon.tsx)
           const dir = new THREE.Vector3(flyby.x, flyby.y, flyby.z).normalize();
           const moonPos = new THREE.Vector3(
-            (flyby.x + dir.x * 10637) / SCALE_FACTOR,
-            (flyby.y + dir.y * 10637) / SCALE_FACTOR,
-            (flyby.z + dir.z * 10637) / SCALE_FACTOR,
+            (flyby.x - dir.x * 10637) / SCALE_FACTOR,
+            (flyby.y - dir.y * 10637) / SCALE_FACTOR,
+            (flyby.z - dir.z * 10637) / SCALE_FACTOR,
           );
           // Camera further back to see Moon + trajectory loop
           targetPos.current.copy(moonPos).add(new THREE.Vector3(0, 15, 10));
