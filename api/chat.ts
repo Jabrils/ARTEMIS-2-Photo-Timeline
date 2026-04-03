@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const SYSTEM_PROMPT = `You are ARTEMIS AI, an expert assistant for the Artemis II mission tracker.
+const LAUNCH_EPOCH_MS = Date.UTC(2026, 3, 1, 22, 35, 0); // April 1, 2026 22:35 UTC
+
+const MISSION_FACTS = `You are ARTEMIS AI, an expert assistant for the Artemis II mission tracker.
 
 MISSION FACTS:
 - Launch: April 1, 2026, 6:35 PM EDT (22:35 UTC) from LC-39B, Kennedy Space Center, Florida
@@ -18,12 +20,55 @@ MISSION FACTS:
 - Future missions: Artemis III (planned ~2027-2028) will land astronauts on the lunar south pole, the first Moon landing since Apollo 17 in 1972.
 
 RULES:
-- Answer ONLY from the facts above and general publicly known space knowledge
+- Answer ONLY from the facts above, the current date/time context below, and general publicly known space knowledge
 - If you don't know something, say "I don't have that specific information about the Artemis II mission"
 - Keep answers concise (2-4 sentences for simple questions, more for complex ones)
 - Be enthusiastic about space exploration
 - Never speculate about mission anomalies, safety incidents, or crew health
-- If asked about real-time telemetry data, direct users to the tracker dashboard`;
+- If asked about real-time telemetry data, direct users to the tracker dashboard
+- ALWAYS use the current date/time context below to determine mission status — the mission HAS launched`;
+
+function buildSystemPrompt(userTimezone?: string): string {
+  const now = new Date();
+  const utcStr = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+
+  // Compute MET
+  const metMs = now.getTime() - LAUNCH_EPOCH_MS;
+  const metDays = Math.floor(metMs / 86400000);
+  const metHours = Math.floor((metMs % 86400000) / 3600000);
+  const metMinutes = Math.floor((metMs % 3600000) / 60000);
+  const metStr = `M+ ${String(metDays).padStart(2, '0')}:${String(metHours).padStart(2, '0')}:${String(metMinutes).padStart(2, '0')}`;
+
+  // Determine mission phase based on MET
+  let phase = 'Pre-launch';
+  const metHoursTotal = metMs / 3600000;
+  if (metHoursTotal < 0) phase = 'Pre-launch';
+  else if (metHoursTotal < 5) phase = 'Earth Orbit / TLI';
+  else if (metHoursTotal < 96) phase = 'Outbound Coast (heading toward the Moon)';
+  else if (metHoursTotal < 130) phase = 'Lunar Flyby';
+  else if (metHoursTotal < 220) phase = 'Return Coast (heading back to Earth)';
+  else if (metHoursTotal < 240) phase = 'Entry / Splashdown';
+  else phase = 'Mission Complete';
+
+  // User timezone display
+  let tzLine = '';
+  if (userTimezone) {
+    try {
+      const localStr = now.toLocaleString('en-US', { timeZone: userTimezone, dateStyle: 'full', timeStyle: 'long' });
+      tzLine = `\n- User's local time (${userTimezone}): ${localStr}`;
+    } catch {
+      // Invalid timezone, skip
+    }
+  }
+
+  return `${MISSION_FACTS}
+
+CURRENT DATE/TIME CONTEXT (use this to answer time-sensitive questions):
+- Current UTC: ${utcStr}
+- Mission Elapsed Time: ${metStr}
+- Current mission phase: ${phase}${tzLine}
+- The mission launched successfully on April 1, 2026. The crew is currently in space.`;
+}
 
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
@@ -37,14 +82,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
 
-  const { messages } = req.body as { messages: Array<{ role: string; text: string }> };
+  const { messages, userTimezone } = req.body as {
+    messages: Array<{ role: string; text: string }>;
+    userTimezone?: string;
+  };
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages array required' });
   }
 
   const geminiBody = {
     system_instruction: {
-      parts: [{ text: SYSTEM_PROMPT }],
+      parts: [{ text: buildSystemPrompt(userTimezone) }],
     },
     contents: messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
