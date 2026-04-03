@@ -8,8 +8,8 @@ type Intent = 'text' | 'image' | 'nasa-image' | 'chart' | 'video';
 
 const VIDEO_RE = /video|watch|footage|clip|stream/;
 const CHART_RE = /chart|graph|plot|altitude over|velocity over|speed over|distance over/;
-const NASA_IMAGE_RE = /real photo|actual photo|nasa photo|crew photo|launch photo|official photo/;
-const IMAGE_RE = /show me|picture|image|draw|diagram|illustrat|visual|what does.*look/;
+const NASA_IMAGE_RE = /photo|picture|image|show me|what does.*look|visual/;
+const IMAGE_RE = /draw|diagram|illustrat|generate|create|design|sketch/;
 
 function detectIntent(text: string): Intent {
   const lower = text.toLowerCase();
@@ -153,8 +153,8 @@ async function generateImage(prompt: string, apiKey: string): Promise<ChatPart[]
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    // Fall back to text response if image generation fails
-    return [{ type: 'text', content: 'I was unable to generate an image for that request. Try asking a text question instead.' }];
+    // Fall back to NASA Image search if Gemini generation fails
+    return searchNasaImages(prompt);
   }
   const data = await res.json();
   const parts: ChatPart[] = (data.candidates?.[0]?.content?.parts ?? []).flatMap((part: { text?: string; inlineData?: { data: string; mimeType: string } }) => {

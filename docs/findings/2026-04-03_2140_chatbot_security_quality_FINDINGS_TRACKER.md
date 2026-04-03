@@ -23,8 +23,9 @@ Tracking security and quality remediation for the multimodal chatbot, sourced fr
 | F5 | ChatPart type divergence server/client | Defect | **Medium** | Verified | Verified | [Report](2026-04-03_2140_chatbot_security_quality.md) |
 | F6 | Unsanitized videoId in iframe src | Defect | **Medium** | Verified | Verified | [Report](2026-04-03_2140_chatbot_security_quality.md) |
 | F7 | Message sanitization filter runs over unbounded input before slice | Defect | **Medium** | Verified | Verified | [Report](../reviews/2026-04-04_0004_diff.md) |
-| F8 | Curated YouTube video IDs are unavailable — "Video unavailable" on every video request | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-04_0030_chatbot_video_ids_broken.md) |
-| F9 | Text responses truncated mid-sentence — maxOutputTokens too low | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-04_0030_chatbot_text_truncation.md) |
+| F8 | Curated YouTube video IDs are unavailable — "Video unavailable" on every video request | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0030_chatbot_video_ids_broken.md) |
+| F9 | Text responses truncated mid-sentence — maxOutputTokens too low | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0030_chatbot_text_truncation.md) |
+| F10 | Image intent routes general requests to failing Gemini instead of NASA search | Defect | **Medium** | In Progress | RCA Complete | [Report](2026-04-04_0045_chatbot_image_intent_mismatch.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -311,6 +312,8 @@ F7 is independent of F1-F6; relates to input validation path in F3's vicinity
 | 2026-04-04 00:30 UTC | 3 | F8-F9 added from live deployment verification. F8: Broken YouTube video IDs (Medium Defect). F9: Text response truncation (Medium Defect). |
 | 2026-04-04 00:32 UTC | 3 | F8, F9 stage -> RCA Complete. Root causes confirmed: placeholder video IDs and maxOutputTokens: 500. RCA: docs/RCAs/2026-04-04_0032_chatbot_video_ids_and_truncation.md |
 | 2026-04-04 00:35 UTC | 3 | F8, F9 -> Resolved. Replaced all 7 video IDs with verified NASA YouTube videos. maxOutputTokens increased to 1024. Build passes, 15/15 tests pass. |
+| 2026-04-04 00:40 UTC | 3 | F8, F9 -> Verified. Deployed to Vercel. Video returns valid NASA video (_eeZQw9PBc0). Text response completes without truncation. |
+| 2026-04-04 00:45 UTC | 3 | F10 added from live testing. Image intent mismatch: NASA_IMAGE_RE too narrow, IMAGE_RE too broad. RCA complete. |
 
 ---
 
