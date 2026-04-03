@@ -7,6 +7,7 @@ import Trajectory from './Trajectory';
 import Spacecraft from './Spacecraft';
 import CameraController from './CameraController';
 import DataDriver from './DataDriver';
+import CameraDebug from './CameraDebug';
 
 export default function Scene() {
   return (
@@ -20,6 +21,7 @@ export default function Scene() {
 
       <DataDriver />
       <CameraController />
+      <CameraDebug />
       <Stars />
 
       <Suspense fallback={null}>
