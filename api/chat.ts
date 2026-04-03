@@ -167,8 +167,11 @@ async function generateImage(prompt: string, apiKey: string): Promise<ChatPart[]
 }
 
 async function searchNasaImages(query: string): Promise<ChatPart[]> {
-  // Extract search terms: remove common words, always add "artemis II" for mission relevance
-  const cleanQuery = query.replace(/show|me|real|actual|official|photo|photos|picture|pictures|image|images|of|the|a|an/gi, '').trim() || 'artemis II';
+  // Build NASA Image API search query: strip UI noise, normalize synonyms, ensure mission context
+  const cleanQuery = query
+    .replace(/\b(show|me|find|get|can you|please|real|actual|official|of|the|a|an|some|any)\b/gi, '')
+    .replace(/\b(picture|pictures|image|images)\b/gi, 'photo')
+    .trim() || 'artemis II';
   const searchQuery = cleanQuery.toLowerCase().includes('artemis') ? cleanQuery : `artemis II ${cleanQuery}`;
   const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(searchQuery)}&media_type=image&page_size=3`);
   if (!res.ok) return [{ type: 'text', content: 'Could not search NASA images right now. Try again later.' }];
