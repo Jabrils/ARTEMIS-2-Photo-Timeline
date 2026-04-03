@@ -68,14 +68,34 @@ function computePlanView(oemData: StateVector[], isMobile: boolean) {
 
   const normal = getOrbitalPlaneNormal(oemData);
 
-  return {
-    camPos: new THREE.Vector3(
-      cx + normal.x * dist,
-      cy + normal.y * dist,
-      cz + normal.z * dist,
-    ),
-    target: new THREE.Vector3(cx, cy, cz),
-  };
+  const camPos = new THREE.Vector3(
+    cx + normal.x * dist,
+    cy + normal.y * dist,
+    cz + normal.z * dist,
+  );
+  const target = new THREE.Vector3(cx, cy, cz);
+
+  // Compute camera up vector so trajectory's widest extent is horizontal
+  const viewDir = new THREE.Vector3().subVectors(camPos, target).normalize();
+  const extents = [
+    new THREE.Vector3(maxX - minX, 0, 0),
+    new THREE.Vector3(0, maxY - minY, 0),
+    new THREE.Vector3(0, 0, maxZ - minZ),
+  ];
+  let widestAxis = extents[0];
+  let widestLen = 0;
+  for (const ext of extents) {
+    const projected = ext.clone().addScaledVector(viewDir, -ext.dot(viewDir));
+    const len = projected.length();
+    if (len > widestLen) {
+      widestLen = len;
+      widestAxis = projected;
+    }
+  }
+  const cameraUp = new THREE.Vector3().crossVectors(widestAxis.normalize(), viewDir).normalize();
+  if (cameraUp.y < 0) cameraUp.negate();
+
+  return { camPos, target, cameraUp };
 }
 
 export default function CameraController() {
@@ -96,8 +116,9 @@ export default function CameraController() {
   }, [cameraMode, setCameraMode]);
 
   const applyPlanView = useCallback((oemData: StateVector[]) => {
-    const { camPos, target } = computePlanView(oemData, isMobile);
+    const { camPos, target, cameraUp } = computePlanView(oemData, isMobile);
     camera.position.copy(camPos);
+    camera.up.copy(cameraUp);
     if (controlsRef.current) {
       controlsRef.current.target.copy(target);
     }

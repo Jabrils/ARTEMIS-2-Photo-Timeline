@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 
 /**
  * Press D to toggle camera debug overlay.
@@ -23,7 +24,7 @@ export default function CameraDebug() {
   useFrame(() => {
     if (!visible) return;
     // Get the lookAt target from the camera's direction
-    const dir = camera.getWorldDirection({ x: 0, y: 0, z: 0 } as any);
+    const dir = camera.getWorldDirection(new THREE.Vector3());
     setInfo({
       px: Math.round(camera.position.x * 100) / 100,
       py: Math.round(camera.position.y * 100) / 100,
@@ -37,7 +38,7 @@ export default function CameraDebug() {
   if (!visible) return null;
 
   return (
-    <Html fullscreen zIndexRange={[100, 100]}>
+    <Html fullscreen zIndexRange={[100, 100]} style={{ pointerEvents: 'none' }}>
       <div style={{
         position: 'fixed',
         top: 50,
