@@ -1,0 +1,34 @@
+import { Suspense } from 'react';
+import { Canvas } from '@react-three/fiber';
+import Stars from './Stars';
+import Earth from './Earth';
+import Moon from './Moon';
+import Trajectory from './Trajectory';
+import Spacecraft from './Spacecraft';
+import CameraController from './CameraController';
+import DataDriver from './DataDriver';
+
+export default function Scene() {
+  return (
+    <Canvas
+      camera={{ fov: 45, position: [0, 5, 25], near: 0.1, far: 1000 }}
+      style={{ position: 'absolute', inset: 0 }}
+    >
+      <color attach="background" args={['#050510']} />
+      <ambientLight intensity={0.1} />
+      <directionalLight position={[100, 0, 0]} intensity={1.5} />
+
+      <DataDriver />
+      <CameraController />
+      <Stars />
+
+      <Suspense fallback={null}>
+        <Earth />
+        <Moon />
+      </Suspense>
+
+      <Trajectory />
+      <Spacecraft />
+    </Canvas>
+  );
+}

@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space-dark: #0a0a1a;
+  --color-space-deep: #050510;
+  --color-hud-blue: #00d4ff;
+  --color-hud-cyan: #00ffd5;
+  --color-hud-orange: #ff8c00;
+  --color-hud-green: #00ff88;
+  --color-hud-red: #ff4444;
+  --color-hud-glass: rgba(10, 10, 30, 0.7);
+  --color-hud-border: rgba(0, 212, 255, 0.2);
+  --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-space-dark);
+  color: white;
+  font-family: var(--font-family-mono);
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}

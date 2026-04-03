@@ -1,3 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+
+# Vercel
+.vercel/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
 # Wrought session files (local, not committed)
 SESSION_SUMMARY_*.md
 NEXT_SESSION_PROMPT_*.md
+
+# Wrought loop state
+.claude/wrought-loop-state.json
