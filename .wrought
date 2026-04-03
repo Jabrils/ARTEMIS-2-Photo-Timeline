@@ -1,0 +1,17 @@
+format_version=1
+version=0.1.0
+install_path=/Users/johanjgenis/Projects/wrought
+safeguard_version=none
+safeguard_profile=none
+safeguard_paradigm=none
+safeguard_last_run=none
+safeguard_created=none
+safeguard_override=none
+github_owner=none
+github_repo=none
+github_project_number=none
+github_project_id=none
+verifier_type=none
+verifier_test_path=tests/
+verifier_max_loops=5
+verifier_timeout=300
