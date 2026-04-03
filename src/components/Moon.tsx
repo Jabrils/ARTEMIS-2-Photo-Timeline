@@ -44,11 +44,11 @@ export default function Moon() {
     <group position={flybyPos}>
       <mesh>
         <sphereGeometry args={[0.5, 32, 32]} />
-        <meshStandardMaterial map={texture} />
+        <meshStandardMaterial map={texture} emissive="#cccccc" emissiveIntensity={0.4} />
       </mesh>
       <mesh>
         <sphereGeometry args={[0.65, 16, 16]} />
-        <meshBasicMaterial color="#aaaaaa" transparent opacity={0.06} />
+        <meshBasicMaterial color="#dddddd" transparent opacity={0.1} />
       </mesh>
       <Html
         position={[0, 0.9, 0]}
