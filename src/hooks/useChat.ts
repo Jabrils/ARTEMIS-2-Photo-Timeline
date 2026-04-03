@@ -1,9 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { findQuickAnswer } from '../data/artemis-knowledge';
 
+export type ChatPart =
+  | { type: 'text'; content: string }
+  | { type: 'image'; data: string; mimeType: string; alt?: string }
+  | { type: 'nasa-image'; url: string; title: string; credit: string }
+  | { type: 'chart'; chartType: 'altitude' | 'velocity' | 'earth-distance'; title: string }
+  | { type: 'video'; videoId: string; title: string };
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
+  parts?: ChatPart[];
 }
 
 export function useChat() {
@@ -31,6 +39,7 @@ export function useChat() {
     // Fall back to API — read from ref to get latest messages (avoids stale closure)
     setIsLoading(true);
     try {
+      // Send only text for message history (strip parts — Gemini needs text-only)
       const allMessages = [...messagesRef.current, userMsg].map((m) => ({
         role: m.role,
         text: m.text,
@@ -50,7 +59,19 @@ export function useChat() {
       }
 
       const data = await res.json();
-      const assistantMsg: ChatMessage = { role: 'assistant', text: data.text };
+
+      // Handle multimodal response (parts array) or legacy text response
+      let assistantMsg: ChatMessage;
+      if (data.parts && Array.isArray(data.parts)) {
+        const textContent = data.parts
+          .filter((p: ChatPart) => p.type === 'text')
+          .map((p: { type: 'text'; content: string }) => p.content)
+          .join('\n');
+        assistantMsg = { role: 'assistant', text: textContent, parts: data.parts };
+      } else {
+        assistantMsg = { role: 'assistant', text: data.text };
+      }
+
       setMessages((prev) => [...prev, assistantMsg]);
     } catch {
       const errorMsg: ChatMessage = {

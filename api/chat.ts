@@ -2,6 +2,41 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const LAUNCH_EPOCH_MS = Date.UTC(2026, 3, 1, 22, 35, 0); // April 1, 2026 22:35 UTC
 
+// --- Intent Detection ---
+
+type Intent = 'text' | 'image' | 'nasa-image' | 'chart' | 'video';
+
+function detectIntent(text: string): Intent {
+  const lower = text.toLowerCase();
+  if (/video|watch|footage|clip|stream/.test(lower)) return 'video';
+  if (/chart|graph|plot|altitude over|velocity over|speed over|distance over/.test(lower)) return 'chart';
+  if (/real photo|actual photo|nasa photo|crew photo|launch photo|official photo/.test(lower)) return 'nasa-image';
+  if (/show me|picture|image|draw|diagram|illustrat|visual|what does.*look/.test(lower)) return 'image';
+  return 'text';
+}
+
+// --- Curated Video Lookup (server-side, avoids importing from src/) ---
+
+const CURATED_VIDEOS: Array<{ keywords: string[]; videoId: string; title: string }> = [
+  { keywords: ['launch', 'liftoff', 'takeoff', 'sls'], videoId: 'nB1PWhXmqFk', title: 'Artemis II Launch' },
+  { keywords: ['tli', 'translunar', 'injection', 'burn'], videoId: 'nB1PWhXmqFk', title: 'Translunar Injection Burn' },
+  { keywords: ['crew', 'astronaut', 'wiseman', 'glover', 'koch', 'hansen'], videoId: 'dOxDfn2re0o', title: 'Meet the Artemis II Crew' },
+  { keywords: ['moon', 'lunar', 'flyby'], videoId: 'nB1PWhXmqFk', title: 'Artemis II Lunar Flyby' },
+  { keywords: ['orion', 'spacecraft'], videoId: 'dOxDfn2re0o', title: 'Inside the Orion Spacecraft' },
+  { keywords: ['splashdown', 'return', 'reentry'], videoId: 'nB1PWhXmqFk', title: 'Artemis II Splashdown' },
+  { keywords: ['artemis', 'program', 'overview', 'mission'], videoId: 'nB1PWhXmqFk', title: 'NASA Artemis II Mission Overview' },
+];
+
+function findCuratedVideo(query: string): { videoId: string; title: string } | null {
+  const lower = query.toLowerCase();
+  for (const v of CURATED_VIDEOS) {
+    if (v.keywords.some((k) => lower.includes(k))) return { videoId: v.videoId, title: v.title };
+  }
+  return null;
+}
+
+// --- System Prompt ---
+
 const MISSION_FACTS = `You are ARTEMIS AI, an expert assistant for the Artemis II mission tracker.
 
 MISSION FACTS:
@@ -31,15 +66,12 @@ RULES:
 function buildSystemPrompt(userTimezone?: string): string {
   const now = new Date();
   const utcStr = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-
-  // Compute MET
   const metMs = now.getTime() - LAUNCH_EPOCH_MS;
   const metDays = Math.floor(metMs / 86400000);
   const metHours = Math.floor((metMs % 86400000) / 3600000);
   const metMinutes = Math.floor((metMs % 3600000) / 60000);
   const metStr = `M+ ${String(metDays).padStart(2, '0')}:${String(metHours).padStart(2, '0')}:${String(metMinutes).padStart(2, '0')}`;
 
-  // Determine mission phase based on MET
   let phase = 'Pre-launch';
   const metHoursTotal = metMs / 3600000;
   if (metHoursTotal < 0) phase = 'Pre-launch';
@@ -50,7 +82,6 @@ function buildSystemPrompt(userTimezone?: string): string {
   else if (metHoursTotal < 240) phase = 'Entry / Splashdown';
   else phase = 'Mission Complete';
 
-  // User timezone display
   let tzLine = '';
   if (userTimezone) {
     try {
@@ -70,7 +101,106 @@ CURRENT DATE/TIME CONTEXT (use this to answer time-sensitive questions):
 - The mission launched successfully on April 1, 2026. The crew is currently in space.`;
 }
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+// --- Content Source Helpers ---
+
+interface ChatPart {
+  type: string;
+  [key: string]: unknown;
+}
+
+const GEMINI_TEXT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent';
+
+async function generateTextResponse(messages: Array<{ role: string; text: string }>, systemPrompt: string, apiKey: string): Promise<ChatPart[]> {
+  const geminiBody = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: messages.map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.text }],
+    })),
+    generationConfig: { temperature: 0.7, maxOutputTokens: 500, topP: 0.9 },
+  };
+  const response = await fetch(`${GEMINI_TEXT_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(geminiBody),
+  });
+  if (!response.ok) throw new Error(`Gemini text API ${response.status}`);
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'I could not generate a response.';
+  return [{ type: 'text', content: text }];
+}
+
+async function generateImage(prompt: string, apiKey: string): Promise<ChatPart[]> {
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: `Create a space-themed illustration: ${prompt}` }] }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+      temperature: 0.7,
+      maxOutputTokens: 1000,
+    },
+  };
+  const res = await fetch(`${GEMINI_IMAGE_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    // Fall back to text response if image generation fails
+    return [{ type: 'text', content: 'I was unable to generate an image for that request. Try asking a text question instead.' }];
+  }
+  const data = await res.json();
+  const parts: ChatPart[] = [];
+  for (const part of data.candidates?.[0]?.content?.parts ?? []) {
+    if (part.text) parts.push({ type: 'text', content: part.text });
+    if (part.inlineData) parts.push({ type: 'image', data: part.inlineData.data, mimeType: part.inlineData.mimeType });
+  }
+  return parts.length > 0 ? parts : [{ type: 'text', content: 'I could not generate an image for that request.' }];
+}
+
+async function searchNasaImages(query: string): Promise<ChatPart[]> {
+  // Extract search terms: remove common words
+  const cleanQuery = query.replace(/show|me|real|actual|official|photo|photos|image|images|of|the|a|an/gi, '').trim() || 'artemis II';
+  const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(cleanQuery)}&media_type=image&page_size=3`);
+  if (!res.ok) return [{ type: 'text', content: 'Could not search NASA images right now. Try again later.' }];
+  const data = await res.json();
+  const items = data.collection?.items ?? [];
+  if (items.length === 0) return [{ type: 'text', content: `No NASA images found for "${cleanQuery}". Try a different search term.` }];
+  const parts: ChatPart[] = [{ type: 'text', content: `Here are NASA images related to "${cleanQuery}":` }];
+  for (const item of items.slice(0, 3)) {
+    const meta = item.data?.[0];
+    const thumb = item.links?.[0]?.href;
+    if (thumb && meta) {
+      parts.push({ type: 'nasa-image', url: thumb, title: meta.title || 'NASA Image', credit: meta.center || 'NASA' });
+    }
+  }
+  return parts;
+}
+
+function buildChartParts(text: string): ChatPart[] {
+  const lower = text.toLowerCase();
+  let chartType: string = 'earth-distance';
+  let title = 'Distance from Earth Over Time';
+  if (/velocity|speed/.test(lower)) { chartType = 'velocity'; title = 'Spacecraft Velocity Over Time'; }
+  if (/altitude|height/.test(lower)) { chartType = 'earth-distance'; title = 'Altitude (Distance from Earth) Over Time'; }
+  return [
+    { type: 'text', content: `Here's the ${title.toLowerCase()} chart based on live NASA trajectory data:` },
+    { type: 'chart', chartType, title },
+  ];
+}
+
+function buildVideoParts(text: string): ChatPart[] {
+  const video = findCuratedVideo(text);
+  if (video) {
+    return [
+      { type: 'text', content: `Here's the video: **${video.title}**` },
+      { type: 'video', videoId: video.videoId, title: video.title },
+    ];
+  }
+  return [{ type: 'text', content: 'I don\'t have a specific video for that topic. Try asking for "launch video", "crew video", or "mission overview video".' }];
+}
+
+// --- Main Handler ---
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -90,37 +220,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'messages array required' });
   }
 
-  const geminiBody = {
-    system_instruction: {
-      parts: [{ text: buildSystemPrompt(userTimezone) }],
-    },
-    contents: messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.text }],
-    })),
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 500,
-      topP: 0.9,
-    },
-  };
+  const lastUserMessage = messages[messages.length - 1]?.text ?? '';
+  const intent = detectIntent(lastUserMessage);
 
   try {
-    const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody),
-    });
+    let parts: ChatPart[];
 
-    if (!response.ok) {
-      const err = await response.text();
-      return res.status(response.status).json({ error: err });
+    switch (intent) {
+      case 'image':
+        parts = await generateImage(lastUserMessage, apiKey);
+        break;
+      case 'nasa-image':
+        parts = await searchNasaImages(lastUserMessage);
+        break;
+      case 'chart':
+        parts = buildChartParts(lastUserMessage);
+        break;
+      case 'video':
+        parts = buildVideoParts(lastUserMessage);
+        break;
+      case 'text':
+      default:
+        parts = await generateTextResponse(messages, buildSystemPrompt(userTimezone), apiKey);
+        break;
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'I could not generate a response. Please try again.';
-    res.status(200).json({ text });
-  } catch {
-    res.status(500).json({ error: 'Failed to get response from AI' });
+    res.status(200).json({ parts });
+  } catch (err) {
+    console.error('Chat failed:', err);
+    res.status(500).json({ parts: [{ type: 'text', content: 'Sorry, I encountered an error. Please try again.' }] });
   }
 }

@@ -1,20 +1,31 @@
-import type { ChatMessage as ChatMessageType } from '../hooks/useChat';
+import type { ChatMessage as ChatMessageType, ChatPart } from '../hooks/useChat';
+import ChatImage from './ChatImage';
+import ChatChart from './ChatChart';
+import ChatVideo from './ChatVideo';
 
 /** Render basic markdown: **bold**, newlines, and numbered/bullet lists */
 function renderMarkdown(text: string) {
-  // Convert **bold** to <strong>
   let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  // Convert *italic* to <em>
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  // Convert numbered lists (e.g. "1. ") at line starts to <li>
   html = html.replace(/^(\d+)\.\s+/gm, '<li>');
-  // Convert bullet lists (- or *) at line starts to <li>
   html = html.replace(/^[-*]\s+/gm, '<li>');
-  // Convert double newlines to paragraph breaks
   html = html.replace(/\n\n/g, '<br/><br/>');
-  // Convert remaining newlines to <br/>
   html = html.replace(/\n/g, '<br/>');
   return html;
+}
+
+function renderPart(part: ChatPart, index: number) {
+  switch (part.type) {
+    case 'text':
+      return <span key={index} dangerouslySetInnerHTML={{ __html: renderMarkdown(part.content) }} />;
+    case 'image':
+    case 'nasa-image':
+      return <ChatImage key={index} part={part} />;
+    case 'chart':
+      return <ChatChart key={index} part={part} />;
+    case 'video':
+      return <ChatVideo key={index} part={part} />;
+  }
 }
 
 interface Props {
@@ -35,6 +46,8 @@ export default function ChatMessage({ message }: Props) {
       >
         {isUser ? (
           message.text
+        ) : message.parts ? (
+          message.parts.map(renderPart)
         ) : (
           <span dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }} />
         )}
