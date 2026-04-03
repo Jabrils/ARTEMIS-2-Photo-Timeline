@@ -6,7 +6,11 @@
 
 ## Key Documents
 
-- (none detected yet)
+- README.md -- Project overview with screenshots
+- ARCHITECTURE.md -- System diagram, tech stack, design decisions
+- PRD.md -- Requirements, user stories, risks
+- IMPLEMENTATION_PLAN.md -- 8-phase build guide
+- docs/findings/2026-04-03_1054_artemis_ii_live_visualization_FINDINGS_TRACKER.md -- F1 tracker (Resolved)
 
 ## The Wrought Way of Work
 
@@ -57,9 +61,10 @@ session_docs: []
 <!-- SESSION_CONFIG_END -->
 
 <!-- SESSION_HANDOFF_START -->
-(first session — no handoff yet)
+@NEXT_SESSION_PROMPT_2026-04-03_2035.md
 <!-- SESSION_HANDOFF_END -->
 
 ---
 
 **Last Updated**: 2026-04-03
+**Last Session**: Session 1 -- Built full MVP from scratch: 3D tracker, HUD, AI chatbot, 5 API proxies, deployed to Vercel. F1 Resolved.
