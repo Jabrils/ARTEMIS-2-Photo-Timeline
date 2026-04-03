@@ -13,7 +13,7 @@ Artemis II launched on April 1, 2026 -- humanity's first crewed voyage beyond lo
 
 ARTEMIS solves this by combining three NASA data sources into a single interactive 3D visualization: OEM trajectory files (parsed and interpolated with degree-8 Lagrange polynomials), the Deep Space Network's real-time XML feed, and JPL Horizons for lunar positioning. The result is an accurate, visually engaging mission tracker that anyone can explore in their browser.
 
-The entire project -- from first line of code to production deployment -- was built in a single session using Claude Code with the Wrought structured engineering pipeline.
+The entire project -- from first line of code to production deployment -- was built in a single session using Claude Code with the [Wrought](https://wrought-web.vercel.app) structured engineering pipeline.
 
 ---
 
@@ -152,7 +152,7 @@ npm run build     # TypeScript type checking + production build
 
 ## How It Was Built
 
-This project was built in a single session using [Claude Code](https://claude.ai/code) following the Wrought structured engineering pipeline:
+This project was built in a single session using [Claude Code](https://claude.ai/code) following the [Wrought](https://wrought-web.vercel.app) structured engineering pipeline:
 
 1. `/finding` -- Identified the gap (no interactive Artemis II tracker)
 2. `/research` -- Evaluated AI chatbot approaches (system prompt vs RAG)
