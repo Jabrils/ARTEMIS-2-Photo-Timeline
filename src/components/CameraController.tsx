@@ -89,10 +89,9 @@ export default function CameraController() {
         targetLookAt.current.copy(orionPos);
         break;
       case 'earth-view':
-        // Position camera to see Earth centered with trajectory visible
-        // Look at midpoint between Earth and Orion, camera offset to the side
-        targetPos.current.set(midpoint.x + 8, midpoint.y + 5, midpoint.z + 15);
-        targetLookAt.current.copy(midpoint);
+        // Earth centered in frame, camera backed up to see full trajectory
+        targetPos.current.set(0, 10, 35);
+        targetLookAt.current.set(0, 0, 0);
         break;
       case 'moon-view': {
         const oemData = useMissionStore.getState().oemData;
