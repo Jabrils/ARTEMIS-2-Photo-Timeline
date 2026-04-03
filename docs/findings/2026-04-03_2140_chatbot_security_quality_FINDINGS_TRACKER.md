@@ -25,7 +25,7 @@ Tracking security and quality remediation for the multimodal chatbot, sourced fr
 | F7 | Message sanitization filter runs over unbounded input before slice | Defect | **Medium** | Verified | Verified | [Report](../reviews/2026-04-04_0004_diff.md) |
 | F8 | Curated YouTube video IDs are unavailable — "Video unavailable" on every video request | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0030_chatbot_video_ids_broken.md) |
 | F9 | Text responses truncated mid-sentence — maxOutputTokens too low | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0030_chatbot_text_truncation.md) |
-| F10 | Image intent routes general requests to failing Gemini instead of NASA search | Defect | **Medium** | In Progress | RCA Complete | [Report](2026-04-04_0045_chatbot_image_intent_mismatch.md) |
+| F10 | Image intent routes general requests to failing Gemini instead of NASA search | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0045_chatbot_image_intent_mismatch.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`

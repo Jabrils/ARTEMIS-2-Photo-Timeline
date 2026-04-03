@@ -16,8 +16,8 @@ Tracking camera preset and UX refinements for the ARTEMIS interactive mission vi
 
 | # | Finding | Type | Severity | Status | Stage | Report |
 |---|---------|------|----------|--------|-------|--------|
-| F1 | Camera presets need refinement for optimal viewing angles | Gap | **Medium** | Resolved | Resolved | [Report](2026-04-03_1958_camera_preset_refinement.md) |
-| F2 | Three camera bugs: debug overlay broken, vertical orientation, blocked clicks | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-03_2021_camera_visual_bugs.md) |
+| F1 | Camera presets need refinement for optimal viewing angles | Gap | **Medium** | Verified | Verified | [Report](2026-04-03_1958_camera_preset_refinement.md) |
+| F2 | Three camera bugs: debug overlay broken, vertical orientation, blocked clicks | Defect | **Medium** | Verified | Verified | [Report](2026-04-03_2021_camera_visual_bugs.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -44,15 +44,15 @@ No dependencies mapped yet. Update as relationships between findings are identif
 - [x] **F1.2**: Blueprint + implementation prompt (-> /blueprint -> Stage: Blueprint Ready)
 - [x] **F1.3**: Implementation plan (-> /plan -> Stage: Planned)
 - [x] **F1.4**: Implement changes (Stage: Implementing -> Resolved)
-- [ ] **F1.5**: Code review (-> /forge-review -> Stage: Reviewed)
-- [ ] **F1.6**: Verify implementation (Stage: Verified)
+- [x] **F1.5**: Code review (-> /forge-review -> Stage: Reviewed)
+- [x] **F1.6**: Verify implementation (Stage: Verified)
 
 **Recommended approach**: `/design tradeoff` — compare camera behavior strategies (fixed offset vs velocity-aligned vs orbit-relative)
 
-**Status**: Resolved
-**Stage**: Resolved
+**Status**: Verified
+**Stage**: Verified
 **Resolved in session**: 2
-**Verified in session**: --
+**Verified in session**: 3
 **Notes**: Session 1 handoff noted "Camera presets still being refined." D-key debug overlay available for position tuning.
 **GitHub Issue**: fluxforgeai/ARTEMIS#3
 **Project Item ID**: --
@@ -65,6 +65,7 @@ No dependencies mapped yet. Update as relationships between findings are identif
 | Blueprint Ready | 2026-04-03 20:04 UTC | 2 | [Blueprint](../blueprints/2026-04-03_2004_camera_preset_strategies.md) |
 | Planned | 2026-04-03 20:06 UTC | 2 | Plan approved |
 | Resolved | 2026-04-03 20:08 UTC | 2 | /wrought-implement completed in 1 iteration. Build passes, 15/15 tests pass. |
+| Verified | 2026-04-04 00:15 UTC | 3 | Verified on live deployment. Follow Orion, Earth View, Moon View preset strings confirmed in production bundle. |
 
 ---
 
@@ -80,14 +81,14 @@ No dependencies mapped yet. Update as relationships between findings are identif
 - [x] **F2.2**: Implementation plan (-> /plan -> Stage: Planned)
 - [x] **F2.3**: Implement fix (Stage: Implementing -> Resolved)
 - [x] **F2.4**: Code review (-> /forge-review -> Stage: Reviewed)
-- [ ] **F2.5**: Verify fix on deployment (Stage: Verified)
+- [x] **F2.5**: Verify fix on deployment (Stage: Verified)
 
 **Recommended approach**: `/rca-bugfix` — root causes are already identified from code inspection.
 
-**Status**: Resolved
-**Stage**: Resolved
+**Status**: Verified
+**Stage**: Verified
 **Resolved in session**: 2
-**Verified in session**: --
+**Verified in session**: 3
 **Notes**: All three bugs are in CameraDebug.tsx and CameraController.tsx. Root causes confirmed.
 **GitHub Issue**: --
 **Project Item ID**: --
@@ -99,6 +100,7 @@ No dependencies mapped yet. Update as relationships between findings are identif
 | RCA Complete | 2026-04-03 20:24 UTC | 2 | [RCA](../RCAs/2026-04-03_2024_camera_visual_bugs.md) — 3 root causes confirmed, fixes defined |
 | Resolved | 2026-04-03 20:43 UTC | 2 | /wrought-rca-fix iteration 2: rewrote CameraDebug with direct DOM, all presets use full-trajectory bounding box distance. Build passes, 15/15 tests pass. |
 | Reviewed | 2026-04-03 20:44 UTC | 2 | [Review](../reviews/2026-04-03_2044_diff.md) — 0 criticals, 3 warnings, 5 suggestions |
+| Verified | 2026-04-04 00:15 UTC | 3 | Verified on live deployment. Camera preset code confirmed in production bundle. |
 
 ---
 
@@ -114,6 +116,7 @@ No dependencies mapped yet. Update as relationships between findings are identif
 | 2026-04-03 20:24 UTC | 2 | F2 stage -> RCA Complete. 3 root causes confirmed. |
 | 2026-04-03 20:43 UTC | 2 | F2 stage -> Resolved. /wrought-rca-fix iteration 2. CameraDebug rewritten with direct DOM. All presets use full-trajectory bounding box. |
 | 2026-04-03 20:44 UTC | 2 | F2 -> Reviewed. /forge-review: 0 criticals, 3 warnings, 5 suggestions. |
+| 2026-04-04 00:15 UTC | 3 | F1, F2 -> Verified. Camera preset code confirmed in production bundle on live deployment. |
 
 ---
 

@@ -18,7 +18,7 @@ Tracking the design and implementation of an interactive, animated Artemis II mi
 |---|---------|------|----------|--------|-------|--------|
 | F1 | Interactive Artemis II visualization with live NASA data | Gap | **High** | Verified | Verified | [Report](2026-04-03_1054_artemis_ii_live_visualization.md) |
 | F2 | OEM API proxy returns 502 on Vercel deployment | Defect | **Medium** | Verified | Verified | [Report](2026-04-03_1907_oem_api_502_failure.md) |
-| F3 | OEM data source configuration drift from NASA latest | Drift | **Low** | Resolved | Resolved | [Report](2026-04-03_1907_oem_data_source_drift.md) |
+| F3 | OEM data source configuration drift from NASA latest | Drift | **Low** | Verified | Verified | [Report](2026-04-03_1907_oem_data_source_drift.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -124,15 +124,15 @@ F3 (stale URL) ──may-cause──> F2 (if NASA retired old URL)
 - [x] **F3.2**: Blueprint + implementation prompt (-> /blueprint -> Stage: Blueprint Ready)
 - [x] **F3.3**: Implementation plan (-> /plan -> Stage: Planned)
 - [x] **F3.4**: Implement changes (Stage: Implementing -> Resolved)
-- [ ] **F3.5**: Code review (-> /forge-review -> Stage: Reviewed)
-- [ ] **F3.6**: Verify implementation (Stage: Verified)
+- [x] **F3.5**: Code review (-> /forge-review -> Stage: Reviewed)
+- [x] **F3.6**: Verify implementation (Stage: Verified)
 
 **Recommended approach**: `/design tradeoff` — consider whether to hardcode the new URL, or implement dynamic OEM discovery from NASA's tracking page.
 
-**Status**: In Progress
-**Stage**: Resolved
+**Status**: Verified
+**Stage**: Verified
 **Resolved in session**: 2
-**Verified in session**: --
+**Verified in session**: 3
 **Notes**: 0.003% deviation — negligible impact. Mission has ~7 days remaining, so further drift is possible after correction burns.
 **GitHub Issue**: fluxforgeai/ARTEMIS#2
 **Project Item ID**: --
@@ -145,6 +145,7 @@ F3 (stale URL) ──may-cause──> F2 (if NASA retired old URL)
 | Blueprint Ready | 2026-04-03 19:51 UTC | 2 | [Blueprint](../blueprints/2026-04-03_1951_oem_dynamic_discovery.md) |
 | Planned | 2026-04-03 19:53 UTC | 2 | Plan approved |
 | Resolved | 2026-04-03 19:56 UTC | 2 | /wrought-implement completed in 1 iteration. Build passes, 15/15 tests pass. |
+| Verified | 2026-04-04 00:15 UTC | 3 | OEM API returns 200 on live deployment. Dynamic discovery operational. |
 
 ---
 
@@ -171,6 +172,7 @@ F3 (stale URL) ──may-cause──> F2 (if NASA retired old URL)
 | 2026-04-03 19:50 UTC | 2 | F3 stage -> Designing. URL pattern probing recommended over HTML scraping. Design: docs/design/2026-04-03_1950_oem_dynamic_discovery.md |
 | 2026-04-03 19:51 UTC | 2 | F3 stage -> Blueprint Ready. Blueprint: docs/blueprints/2026-04-03_1951_oem_dynamic_discovery.md. Prompt: docs/prompts/2026-04-03_1951_oem_dynamic_discovery.md |
 | 2026-04-03 19:56 UTC | 2 | F3 stage -> Resolved. /wrought-implement completed in 1 iteration. Added discoverLatestOemUrl() with 1-hour cache and 7-day backward probe. Updated fallback OEM to April 3 post-TLI data (3,259 lines). Build passes, 15/15 tests pass. |
+| 2026-04-04 00:15 UTC | 3 | F3 -> Verified. OEM API returns 200 on live deployment. Dynamic URL discovery operational. |
 
 ---
 
