@@ -167,14 +167,15 @@ async function generateImage(prompt: string, apiKey: string): Promise<ChatPart[]
 }
 
 async function searchNasaImages(query: string): Promise<ChatPart[]> {
-  // Extract search terms: remove common words
-  const cleanQuery = query.replace(/show|me|real|actual|official|photo|photos|image|images|of|the|a|an/gi, '').trim() || 'artemis II';
-  const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(cleanQuery)}&media_type=image&page_size=3`);
+  // Extract search terms: remove common words, always add "artemis II" for mission relevance
+  const cleanQuery = query.replace(/show|me|real|actual|official|photo|photos|picture|pictures|image|images|of|the|a|an/gi, '').trim() || 'artemis II';
+  const searchQuery = cleanQuery.toLowerCase().includes('artemis') ? cleanQuery : `artemis II ${cleanQuery}`;
+  const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(searchQuery)}&media_type=image&page_size=3`);
   if (!res.ok) return [{ type: 'text', content: 'Could not search NASA images right now. Try again later.' }];
   const data = await res.json();
   const items = data.collection?.items ?? [];
-  if (items.length === 0) return [{ type: 'text', content: `No NASA images found for "${cleanQuery}". Try a different search term.` }];
-  const parts: ChatPart[] = [{ type: 'text', content: `Here are NASA images related to "${cleanQuery}":` }];
+  if (items.length === 0) return [{ type: 'text', content: `No NASA images found for "${searchQuery}". Try a different search term.` }];
+  const parts: ChatPart[] = [{ type: 'text', content: `Here are NASA images related to "${searchQuery}":` }];
   for (const item of items.slice(0, 3)) {
     const meta = item.data?.[0];
     const thumb = item.links?.[0]?.href;
