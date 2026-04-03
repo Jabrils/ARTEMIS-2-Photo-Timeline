@@ -1,0 +1,88 @@
+**2026-04-03 19:58 UTC**
+
+# Camera & UX Refinement -- Findings Tracker
+
+**Created**: 2026-04-03 19:58 UTC
+**Last Updated**: 2026-04-03 20:08 UTC
+**Origin**: Session 2 review of camera presets identified in Session 1 handoff as needing refinement
+**Session**: 2
+**Scope**: Camera preset positions, viewing angles, and visual presentation for the Artemis II mission tracker
+
+---
+
+## Overview
+
+Tracking camera preset and UX refinements for the ARTEMIS interactive mission visualization.
+
+| # | Finding | Type | Severity | Status | Stage | Report |
+|---|---------|------|----------|--------|-------|--------|
+| F1 | Camera presets need refinement for optimal viewing angles | Gap | **Medium** | Resolved | Resolved | [Report](2026-04-03_1958_camera_preset_refinement.md) |
+
+**Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
+**Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
+
+---
+
+## Dependency Map
+
+```
+No dependencies mapped yet. Update as relationships between findings are identified.
+```
+
+---
+
+## F1: Camera Presets Need Refinement (Medium Gap)
+
+**Summary**: The four camera presets in `CameraController.tsx` use fixed offsets that don't adapt to trajectory geometry. Follow Orion doesn't rotate with velocity, Earth View is identical to the default plan view, and Moon View uses a hardcoded offset that may not show the flyby loop well.
+
+**Root cause**: Presets were implemented with minimal hardcoded offsets during the Session 1 MVP build. Refinement requires visual iteration with the live 3D scene.
+
+**Resolution tasks**:
+
+- [x] **F1.1**: Design approach — define improved preset positions and behaviors (-> /design -> Stage: Designing)
+- [x] **F1.2**: Blueprint + implementation prompt (-> /blueprint -> Stage: Blueprint Ready)
+- [x] **F1.3**: Implementation plan (-> /plan -> Stage: Planned)
+- [x] **F1.4**: Implement changes (Stage: Implementing -> Resolved)
+- [ ] **F1.5**: Code review (-> /forge-review -> Stage: Reviewed)
+- [ ] **F1.6**: Verify implementation (Stage: Verified)
+
+**Recommended approach**: `/design tradeoff` — compare camera behavior strategies (fixed offset vs velocity-aligned vs orbit-relative)
+
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: 2
+**Verified in session**: --
+**Notes**: Session 1 handoff noted "Camera presets still being refined." D-key debug overlay available for position tuning.
+**GitHub Issue**: fluxforgeai/ARTEMIS#3
+**Project Item ID**: --
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-04-03 19:58 UTC | 2 | [Finding Report](2026-04-03_1958_camera_preset_refinement.md) |
+| Designing | 2026-04-03 20:02 UTC | 2 | [Design Analysis](../design/2026-04-03_2002_camera_preset_strategies.md) — Scene-Aware Smart Presets recommended |
+| Blueprint Ready | 2026-04-03 20:04 UTC | 2 | [Blueprint](../blueprints/2026-04-03_2004_camera_preset_strategies.md) |
+| Planned | 2026-04-03 20:06 UTC | 2 | Plan approved |
+| Resolved | 2026-04-03 20:08 UTC | 2 | /wrought-implement completed in 1 iteration. Build passes, 15/15 tests pass. |
+
+---
+
+## Changelog
+
+| Date | Session | Action |
+|------|---------|--------|
+| 2026-04-03 19:58 UTC | 2 | Created tracker. F1 logged (Medium Gap). |
+| 2026-04-03 20:02 UTC | 2 | F1 stage -> Designing. Scene-Aware Smart Presets recommended (velocity-aligned chase cam, Earth-centric view, flyby-optimized Moon view). Design: docs/design/2026-04-03_2002_camera_preset_strategies.md |
+| 2026-04-03 20:04 UTC | 2 | F1 stage -> Blueprint Ready. Blueprint: docs/blueprints/2026-04-03_2004_camera_preset_strategies.md. Prompt: docs/prompts/2026-04-03_2004_camera_preset_strategies.md |
+| 2026-04-03 20:08 UTC | 2 | F1 stage -> Resolved. /wrought-implement completed in 1 iteration. Velocity-aligned chase cam, Earth-centric tracking, orbital-normal Moon view. Build passes, 15/15 tests pass. |
+
+---
+
+## Cross-References
+
+| Document | Description |
+|----------|-------------|
+| docs/findings/2026-04-03_1958_camera_preset_refinement.md | F1 finding report |
+| src/components/CameraController.tsx | Camera preset logic |
+| src/hud/CameraControls.tsx | Preset button UI |
+| src/components/CameraDebug.tsx | D-key debug overlay |

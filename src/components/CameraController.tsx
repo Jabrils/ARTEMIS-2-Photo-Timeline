@@ -17,13 +17,39 @@ function useIsMobile() {
   return isMobile;
 }
 
+// Cached orbital plane normal — computed once from trajectory data
+let cachedPlaneNormal: THREE.Vector3 | null = null;
+
+function getOrbitalPlaneNormal(oemData: StateVector[]): THREE.Vector3 {
+  if (cachedPlaneNormal) return cachedPlaneNormal;
+
+  const i0 = 0;
+  const i1 = Math.floor(oemData.length * 0.25);
+  const i2 = Math.floor(oemData.length * 0.5);
+
+  const v1 = new THREE.Vector3(
+    oemData[i1].x - oemData[i0].x,
+    oemData[i1].y - oemData[i0].y,
+    oemData[i1].z - oemData[i0].z,
+  ).normalize();
+  const v2 = new THREE.Vector3(
+    oemData[i2].x - oemData[i0].x,
+    oemData[i2].y - oemData[i0].y,
+    oemData[i2].z - oemData[i0].z,
+  ).normalize();
+
+  const normal = new THREE.Vector3().crossVectors(v1, v2).normalize();
+  if (normal.y < 0) normal.negate();
+
+  cachedPlaneNormal = normal;
+  return normal;
+}
+
 /**
  * Compute camera position looking down at the trajectory's orbital plane.
- * Finds the plane normal via cross product of two trajectory vectors,
- * then positions camera along that normal for a true top-down plan view.
+ * Uses the cached orbital plane normal for a true top-down plan view.
  */
 function computePlanView(oemData: StateVector[], isMobile: boolean) {
-  // Bounding box for sizing
   let minX = Infinity, maxX = -Infinity;
   let minY = Infinity, maxY = -Infinity;
   let minZ = Infinity, maxZ = -Infinity;
@@ -40,25 +66,7 @@ function computePlanView(oemData: StateVector[], isMobile: boolean) {
   const range = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
   const dist = range * (isMobile ? 1.8 : 1.4);
 
-  // Find orbital plane normal using cross product of two trajectory vectors
-  const i0 = 0;
-  const i1 = Math.floor(oemData.length * 0.25);
-  const i2 = Math.floor(oemData.length * 0.5);
-
-  const v1 = new THREE.Vector3(
-    (oemData[i1].x - oemData[i0].x) / SCALE_FACTOR,
-    (oemData[i1].y - oemData[i0].y) / SCALE_FACTOR,
-    (oemData[i1].z - oemData[i0].z) / SCALE_FACTOR,
-  );
-  const v2 = new THREE.Vector3(
-    (oemData[i2].x - oemData[i0].x) / SCALE_FACTOR,
-    (oemData[i2].y - oemData[i0].y) / SCALE_FACTOR,
-    (oemData[i2].z - oemData[i0].z) / SCALE_FACTOR,
-  );
-
-  const normal = new THREE.Vector3().crossVectors(v1, v2).normalize();
-  // Ensure normal points toward positive Y (conventional "up")
-  if (normal.y < 0) normal.negate();
+  const normal = getOrbitalPlaneNormal(oemData);
 
   return {
     camPos: new THREE.Vector3(
@@ -113,7 +121,7 @@ export default function CameraController() {
     return unsub;
   }, [applyPlanView]);
 
-  // Camera presets
+  // Camera presets — each mode uses a purpose-built strategy
   useEffect(() => {
     if (cameraMode === 'free') return;
 
@@ -126,23 +134,33 @@ export default function CameraController() {
     );
 
     switch (cameraMode) {
-      case 'follow-orion':
-        // Further back so Orion is a small marker, trajectory visible
-        targetPos.current.copy(orionPos).add(new THREE.Vector3(5, 8, 20));
+      case 'follow-orion': {
+        // Velocity-aligned chase cam — trail behind spacecraft, look ahead
+        const vel = new THREE.Vector3(sc.vx, sc.vy, sc.vz);
+        const speed = vel.length();
+        const dir = speed > 0.01 ? vel.normalize() : orionPos.clone().normalize();
+        const normal = oemData?.length ? getOrbitalPlaneNormal(oemData) : new THREE.Vector3(0, 1, 0);
+        const trail = isMobile ? 30 : 25;
+        const elev = isMobile ? 10 : 8;
+        targetPos.current.copy(orionPos)
+          .addScaledVector(dir, -trail)
+          .addScaledVector(normal, elev);
+        targetLookAt.current.copy(orionPos)
+          .addScaledVector(dir, 5);
+        break;
+      }
+
+      case 'earth-view': {
+        // Near Earth, looking outward at the departing spacecraft
+        const elev = isMobile ? 4 : 3;
+        const back = isMobile ? 6 : 5;
+        targetPos.current.set(0, elev, back);
         targetLookAt.current.copy(orionPos);
         break;
-
-      case 'earth-view':
-        // Top-down plan view
-        if (oemData && oemData.length > 0) {
-          const { camPos, target } = computePlanView(oemData, isMobile);
-          targetPos.current.copy(camPos);
-          targetLookAt.current.copy(target);
-        }
-        break;
+      }
 
       case 'moon-view': {
-        // Show Moon with trajectory curving around it
+        // Above Moon along orbital plane normal — shows flyby loop
         if (oemData && oemData.length > 0) {
           let maxDist = 0;
           let flyby = oemData[0];
@@ -150,30 +168,45 @@ export default function CameraController() {
             const d = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
             if (d > maxDist) { maxDist = d; flyby = v; }
           }
-          // Moon is offset from flyby point (see Moon.tsx)
           const dir = new THREE.Vector3(flyby.x, flyby.y, flyby.z).normalize();
           const moonPos = new THREE.Vector3(
             (flyby.x - dir.x * 10637) / SCALE_FACTOR,
             (flyby.y - dir.y * 10637) / SCALE_FACTOR,
             (flyby.z - dir.z * 10637) / SCALE_FACTOR,
           );
-          // Camera further back to see Moon + trajectory loop
-          targetPos.current.copy(moonPos).add(new THREE.Vector3(0, 15, 10));
+          const normal = getOrbitalPlaneNormal(oemData);
+          const dist = isMobile ? 18 : 15;
+          targetPos.current.copy(moonPos).addScaledVector(normal, dist);
           targetLookAt.current.copy(moonPos);
         }
         break;
       }
+
     }
   }, [cameraMode, isMobile]);
 
   useFrame(() => {
     if (cameraMode === 'free') return;
 
+    // Follow Orion: update chase cam every frame to track moving spacecraft
     if (cameraMode === 'follow-orion') {
       const sc = useMissionStore.getState().spacecraft;
+      const oemData = useMissionStore.getState().oemData;
       const orionPos = new THREE.Vector3(sc.x / SCALE_FACTOR, sc.y / SCALE_FACTOR, sc.z / SCALE_FACTOR);
-      targetPos.current.copy(orionPos).add(new THREE.Vector3(5, 8, 20));
-      targetLookAt.current.copy(orionPos);
+      const vel = new THREE.Vector3(sc.vx, sc.vy, sc.vz);
+      const speed = vel.length();
+      const dir = speed > 0.01 ? vel.normalize() : orionPos.clone().normalize();
+      const normal = oemData?.length ? getOrbitalPlaneNormal(oemData) : new THREE.Vector3(0, 1, 0);
+      const trail = isMobile ? 30 : 25;
+      const elev = isMobile ? 10 : 8;
+      targetPos.current.copy(orionPos).addScaledVector(dir, -trail).addScaledVector(normal, elev);
+      targetLookAt.current.copy(orionPos).addScaledVector(dir, 5);
+    }
+
+    // Earth View: track spacecraft as it moves away from Earth
+    if (cameraMode === 'earth-view') {
+      const sc = useMissionStore.getState().spacecraft;
+      targetLookAt.current.set(sc.x / SCALE_FACTOR, sc.y / SCALE_FACTOR, sc.z / SCALE_FACTOR);
     }
 
     camera.position.lerp(targetPos.current, 0.03);
