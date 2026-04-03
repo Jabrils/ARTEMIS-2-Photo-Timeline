@@ -13,17 +13,34 @@ export function useOEM() {
     async function fetchOEM() {
       try {
         const res = await fetch('/api/oem', { signal: controller.signal });
-        if (!res.ok) throw new Error(`OEM fetch failed: ${res.status}`);
+        if (!res.ok) throw new Error(`OEM API failed: ${res.status}`);
         const text = await res.text();
         const data = parseOEM(text);
         if (data.vectors.length > 0) {
           useMissionStore.getState().setOemData(data.vectors);
+          return;
         }
       } catch (err) {
         if (controller.signal.aborted) return;
-        console.warn('OEM fetch failed, retrying in 30s:', err);
-        retryTimeout = setTimeout(fetchOEM, 30_000);
+        console.warn('OEM API fetch failed, trying local fallback:', err);
       }
+
+      // Fallback: load bundled OEM file
+      try {
+        const res = await fetch('/fallback-oem.asc', { signal: controller.signal });
+        if (!res.ok) throw new Error(`Fallback fetch failed: ${res.status}`);
+        const text = await res.text();
+        const data = parseOEM(text);
+        if (data.vectors.length > 0) {
+          useMissionStore.getState().setOemData(data.vectors);
+          return;
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.warn('Fallback OEM also failed, retrying in 30s:', err);
+      }
+
+      retryTimeout = setTimeout(fetchOEM, 30_000);
     }
 
     async function fetchMoonPosition() {
