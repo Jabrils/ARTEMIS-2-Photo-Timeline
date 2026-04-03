@@ -1,7 +1,43 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { inflateRawSync } from 'zlib';
 
-const OEM_ZIP_URL = 'https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-2026-04-02-to-ei-v3.zip';
+const FALLBACK_OEM_URL = 'https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-2026-04-03-to-ei.zip';
+
+// Module-level cache for discovered OEM URL (survives across requests in warm instances)
+let cachedOemUrl: { url: string; expiry: number } | null = null;
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+const OEM_URL_BASE = 'https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-';
+const OEM_URL_SUFFIX = '-to-ei.zip';
+
+async function discoverLatestOemUrl(): Promise<string> {
+  // Return cached URL if still valid
+  if (cachedOemUrl && Date.now() < cachedOemUrl.expiry) {
+    return cachedOemUrl.url;
+  }
+
+  // Probe recent dates (today back 7 days) with HEAD requests
+  const now = new Date();
+  for (let daysBack = 0; daysBack < 7; daysBack++) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - daysBack);
+    const dateStr = d.toISOString().slice(0, 10);
+    const url = `${OEM_URL_BASE}${dateStr}${OEM_URL_SUFFIX}`;
+    try {
+      const resp = await fetch(url, { method: 'HEAD' });
+      if (resp.ok) {
+        cachedOemUrl = { url, expiry: Date.now() + CACHE_TTL };
+        return url;
+      }
+    } catch {
+      // Probe failed, try next date
+    }
+  }
+
+  // All probes failed — fall back to hardcoded URL
+  cachedOemUrl = { url: FALLBACK_OEM_URL, expiry: Date.now() + CACHE_TTL };
+  return FALLBACK_OEM_URL;
+}
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,8 +47,8 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
 
   try {
-    // Fetch the ZIP file from NASA
-    const upstream = await fetch(OEM_ZIP_URL);
+    const oemUrl = await discoverLatestOemUrl();
+    const upstream = await fetch(oemUrl);
     if (!upstream.ok) throw new Error(`Upstream ${upstream.status}`);
 
     const arrayBuffer = await upstream.arrayBuffer();
