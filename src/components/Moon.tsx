@@ -1,41 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useTexture, Billboard, Html } from '@react-three/drei';
-import * as THREE from 'three';
+import { useTexture, Html } from '@react-three/drei';
 import { useMissionStore } from '../store/mission-store';
 import { SCALE_FACTOR } from '../data/mission-config';
 
-/**
- * Creates a circular texture by drawing the source image onto a canvas
- * with a circular clip path. Pixels outside the circle get alpha=0.
- */
-function useCircularTexture(path: string): THREE.Texture {
-  const source = useTexture(path);
-  return useMemo(() => {
-    const img = source.image as HTMLImageElement;
-    const size = Math.max(img.width, img.height);
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d')!;
-
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-
-    const offsetX = (size - img.width) / 2;
-    const offsetY = (size - img.height) / 2;
-    ctx.drawImage(img, offsetX, offsetY);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = source.colorSpace;
-    tex.needsUpdate = true;
-    return tex;
-  }, [source]);
-}
-
 export default function Moon() {
-  const texture = useCircularTexture('/textures/moon-hires.png');
+  const texture = useTexture('/textures/moon.jpg');
   const oemData = useMissionStore((s) => s.oemData);
   const [hovered, setHovered] = useState(false);
 
@@ -75,17 +44,16 @@ export default function Moon() {
 
   return (
     <group position={flybyPos}>
-      <Billboard>
-        <mesh
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
-        >
-          <planeGeometry args={[1.5, 1.5]} />
-          <meshBasicMaterial map={texture} transparent toneMapped={false} />
-        </mesh>
-      </Billboard>
+      {/* Moon sphere */}
+      <mesh
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshStandardMaterial map={texture} emissive="#cccccc" emissiveIntensity={1.5} toneMapped={false} />
+      </mesh>
       <Html
-        position={[0, 1.0, 0]}
+        position={[0, 0.9, 0]}
         center
         zIndexRange={[0, 0]}
         style={{ pointerEvents: 'none' }}

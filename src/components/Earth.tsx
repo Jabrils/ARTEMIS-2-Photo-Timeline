@@ -1,43 +1,12 @@
-import { useState, useMemo } from 'react';
-import { useTexture, Billboard, Html } from '@react-three/drei';
+import { useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useTexture, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useMissionStore } from '../store/mission-store';
 
-/**
- * Creates a circular texture by drawing the source image onto a canvas
- * with a circular clip path. Pixels outside the circle get alpha=0.
- */
-function useCircularTexture(path: string, radius?: number): THREE.Texture {
-  const source = useTexture(path);
-  return useMemo(() => {
-    const img = source.image as HTMLImageElement;
-    const size = Math.max(img.width, img.height);
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d')!;
-
-    // Circular clip
-    ctx.beginPath();
-    const r = radius ?? size / 2;
-    ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-
-    // Draw centered (crops non-square images to circle)
-    const offsetX = (size - img.width) / 2;
-    const offsetY = (size - img.height) / 2;
-    ctx.drawImage(img, offsetX, offsetY);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = source.colorSpace;
-    tex.needsUpdate = true;
-    return tex;
-  }, [source, radius]);
-}
-
 export default function Earth() {
-  const texture = useCircularTexture('/textures/earth-hires.png');
+  const meshRef = useRef<THREE.Mesh>(null);
+  const texture = useTexture('/textures/earth-day.jpg');
   const moonPosition = useMissionStore((s) => s.moonPosition);
   const [hovered, setHovered] = useState(false);
 
@@ -45,17 +14,28 @@ export default function Earth() {
     ? Math.sqrt(moonPosition.x ** 2 + moonPosition.y ** 2 + moonPosition.z ** 2) * 10000
     : 384400;
 
+  useFrame((_state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += (delta / 86400) * Math.PI * 2;
+    }
+  });
+
   return (
     <group>
-      <Billboard>
-        <mesh
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
-        >
-          <planeGeometry args={[3.0, 3.0]} />
-          <meshBasicMaterial map={texture} transparent toneMapped={false} />
-        </mesh>
-      </Billboard>
+      {/* Earth sphere */}
+      <mesh
+        ref={meshRef}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
+        <sphereGeometry args={[1.274, 64, 64]} />
+        <meshStandardMaterial map={texture} emissive="#4488dd" emissiveIntensity={2.0} toneMapped={false} />
+      </mesh>
+      {/* Atmosphere glow */}
+      <mesh scale={1.08}>
+        <sphereGeometry args={[1.274, 32, 32]} />
+        <meshBasicMaterial color="#77bbff" transparent opacity={0.08} side={THREE.BackSide} />
+      </mesh>
       {hovered && (
         <Html position={[1.8, 0, 0]} style={{ pointerEvents: 'none' }}>
           <div style={{

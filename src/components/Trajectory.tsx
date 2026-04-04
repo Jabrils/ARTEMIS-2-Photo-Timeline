@@ -3,9 +3,9 @@ import { Line } from '@react-three/drei';
 import { useMissionStore } from '../store/mission-store';
 import { SCALE_FACTOR } from '../data/mission-config';
 
-// Visual radii of celestial bodies in scene units (generous padding)
-const EARTH_VISUAL_RADIUS = 2.0; // Earth sprite diameter 3.0 → radius 1.5, +0.5 buffer
-const MOON_VISUAL_RADIUS = 1.2;  // Moon sprite diameter 1.5 → radius 0.75, +0.45 buffer
+// Visual radii of celestial bodies in scene units (matches sphere geometry + buffer)
+const EARTH_VISUAL_RADIUS = 1.5; // Earth sphere radius 1.274 + atmosphere 1.08x + buffer
+const MOON_VISUAL_RADIUS = 0.7;  // Moon sphere radius 0.5 + buffer
 
 type Point3 = [number, number, number];
 
