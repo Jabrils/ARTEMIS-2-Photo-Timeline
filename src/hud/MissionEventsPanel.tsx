@@ -21,6 +21,7 @@ export default function MissionEventsPanel() {
   const { totalMs } = useMission();
   const elapsedHours = totalMs / 3_600_000;
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const currentMilestoneRef = useRef<HTMLDivElement>(null);
 
   // Find current milestone index
   let currentIdx = 0;
@@ -58,6 +59,13 @@ export default function MissionEventsPanel() {
       for (const timer of timers.current.values()) clearTimeout(timer);
     };
   }, []);
+
+  // Auto-scroll to current milestone when panel opens
+  useEffect(() => {
+    if (isOpen && currentMilestoneRef.current) {
+      currentMilestoneRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [isOpen]);
 
   const handleMilestoneHover = useCallback((hours: number) => {
     setHoveredMilestoneHours(hours);
@@ -99,7 +107,7 @@ export default function MissionEventsPanel() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full mt-2 right-0 z-[var(--z-dropdown)] bg-[rgba(10,10,30,0.92)] backdrop-blur-md border border-[rgba(0,212,255,0.2)] rounded-lg w-[calc(100vw-1.5rem)] sm:w-[320px] max-h-[70vh] overflow-y-auto shadow-lg"
+              className="absolute top-full mt-2 right-0 z-[var(--z-dropdown)] bg-[rgba(10,10,30,0.92)] backdrop-blur-md border border-[rgba(0,212,255,0.2)] rounded-lg w-[calc(100vw-1.5rem)] sm:w-[320px] max-h-[50vh] sm:max-h-[70vh] overflow-y-auto shadow-lg"
             >
               {/* Active Alerts */}
               {alerts.length > 0 && (
@@ -145,7 +153,8 @@ export default function MissionEventsPanel() {
                     return (
                       <div
                         key={m.name}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+                        ref={isCurrent ? currentMilestoneRef : undefined}
+                        className={`flex items-center gap-2 px-2 py-1 sm:py-1.5 rounded cursor-pointer transition-colors ${
                           isCurrent
                             ? 'bg-[rgba(0,212,255,0.1)]'
                             : 'hover:bg-[rgba(255,255,255,0.05)]'
@@ -165,7 +174,7 @@ export default function MissionEventsPanel() {
                         </span>
 
                         {/* Name */}
-                        <span className={`flex-1 text-xs font-mono ${
+                        <span className={`flex-1 text-[11px] sm:text-xs font-mono ${
                           isCurrent
                             ? 'text-[#00d4ff] font-bold'
                             : isPast

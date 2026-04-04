@@ -19,7 +19,7 @@ Four UI and visual issues identified from user-provided screenshots at the start
 | F1 | ProgressBar overlays AI Chatbot panel | Defect | **High** | Resolved | Resolved | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 | F3 | Trajectory around Moon renders problematic / direction questioned | Defect | **High** | In Progress | RCA Complete | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 | F2 | ProgressBar sits higher than adjacent telemetry cards | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
-| F4 | Mobile hamburger menu obscures most of screen | Debt | **Medium** | Open | Open | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
+| F4 | Mobile hamburger menu obscures most of screen | Debt | **Medium** | In Progress | Blueprint Ready | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -165,13 +165,13 @@ F3 and F4 are independent of each other and of F1/F2.
 
 **Resolution tasks**:
 
-- [ ] **F4.1**: Design approach -- evaluate reduced max-h on mobile, compact milestone view, or grouped/collapsible timeline sections (-> /design -> Stage: Designing)
-- [ ] **F4.2**: Blueprint + implementation prompt (-> /blueprint -> Stage: Blueprint Ready)
+- [x] **F4.1**: Design approach -- reduced max-h (50vh) + compact items + auto-scroll (-> /design -> Stage: Designing)
+- [x] **F4.2**: Blueprint + implementation prompt (-> /blueprint -> Stage: Blueprint Ready)
 - [ ] **F4.3**: Implement changes (Stage: Implementing -> Resolved)
 - [ ] **F4.4**: Code review (-> /forge-review -> Stage: Reviewed)
 - [ ] **F4.5**: Verify mobile menu size on real device viewports (Stage: Verified)
 
-**Recommended approach**: `/design` -- multiple viable approaches (smaller max-h, compact mode, collapsible groups)
+**Recommended next step**: `/blueprint` with design at `docs/design/2026-04-05_0800_mobile_hamburger_menu.md`
 
 **Status**: Open
 **Stage**: Open
