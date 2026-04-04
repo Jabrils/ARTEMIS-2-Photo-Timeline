@@ -5,7 +5,7 @@ import { SCALE_FACTOR } from '../data/mission-config';
 
 // Visual radii of celestial bodies in scene units (matches sphere geometry + buffer)
 const EARTH_VISUAL_RADIUS = 1.5; // Earth sphere radius 1.274 + atmosphere 1.08x + buffer
-const MOON_VISUAL_RADIUS = 0.55; // Moon sphere radius 0.5 + minimal buffer
+const MOON_VISUAL_RADIUS = 0.30; // Moon sphere radius 0.25 + minimal buffer
 
 type Point3 = [number, number, number];
 

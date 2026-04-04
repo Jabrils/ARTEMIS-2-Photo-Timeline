@@ -103,11 +103,11 @@ export default function Moon() {
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
-        <sphereGeometry args={[0.5, 32, 32]} />
+        <sphereGeometry args={[0.25, 32, 32]} />
         <meshStandardMaterial map={texture} emissive="#cccccc" emissiveIntensity={1.5} toneMapped={false} />
       </mesh>
       <Html
-        position={[0, 0.9, 0]}
+        position={[0, 0.5, 0]}
         center
         zIndexRange={[0, 0]}
         style={{ pointerEvents: 'none' }}
@@ -122,7 +122,7 @@ export default function Moon() {
         }}>MOON</div>
       </Html>
       {hovered && (
-        <Html position={[1.0, 0, 0]} style={{ pointerEvents: 'none' }}>
+        <Html position={[0.6, 0, 0]} style={{ pointerEvents: 'none' }}>
           <div style={{
             background: 'rgba(10,10,30,0.9)',
             backdropFilter: 'blur(8px)',

@@ -79,7 +79,7 @@ F3 and F4 are independent of each other and of F1/F2.
 
 **Summary**: The trajectory line near the Moon appears visually broken or incorrectly rendered. Additionally, the trajectory appears to loop counter-clockwise around the Moon, which the user questions. The `splitAroundBodies()` culling with `MOON_VISUAL_RADIUS = 0.7` may be over-culling or the computed Moon position (derived from max-distance OEM point minus 10,637 km offset) may be slightly off, creating trajectory gaps. Trajectory culling near the Moon was previously fixed in Session 4 (commit 26ef3a1).
 
-**Root cause**: `findMaxCurvatureIndex()` in Moon.tsx selects the WRONG trajectory region. It finds the global maximum curvature, which is at the spacecraft's near-Earth parking orbit (index 341, 6,947 km from Earth, curvature 0.0175) rather than the lunar flyby (index 1779, 413,147 km, curvature 0.0009). Parking orbit curvature is 19x higher than lunar flyby curvature because orbital curvature scales inversely with distance. The circumcenter of three parking-orbit points naturally computes a center near Earth (24,450 km / 2.44 scene units), placing the Moon right next to Earth instead of at ~384,400 km (~38.44 scene units). This is the **5th manifestation** across Sessions 2-5. Prior race condition (useOEM.ts overwriting Moon.tsx) was correctly fixed, but the circumcenter input selection was never validated.
+**Root cause**: Moon position algorithm is now CORRECT (commit `64d94ee`), but the Moon visual sphere (radius 0.5 su = 5,000 km, 2.88x real scale) is disproportionately oversized. The trajectory's closest approach to the circumcenter is ~3,000 km (0.30 su), which falls INSIDE the 5,000 km visual sphere. This causes `splitAroundBodies()` in Trajectory.tsx to cull 168 trajectory points, creating a visible gap. The 5 prior investigations all focused on Moon POSITION; none validated Moon VISUAL SIZE against trajectory clearance. Earth is inflated 2.0x; Moon is inflated 2.88x -- they are not proportional. This is the **6th investigation** across Sessions 2-5.
 
 **Resolution tasks**:
 
@@ -89,18 +89,20 @@ F3 and F4 are independent of each other and of F1/F2.
 - [x] **F3.3**: RCA + fix -- remove useOEM.ts moonPosition writes, make Moon.tsx sole source (-> /rca-bugfix -> Stage: RCA Complete)
 - [x] **F3.3b**: Implement race condition fix -- useOEM.ts no longer writes moonPosition (Stage: Resolved)
 - [x] **F3.4**: Re-investigate -- Moon renders at 2.44 su from Earth (right next to it). Circumcenter algorithm picks wrong trajectory region (-> /investigate -> Stage: Investigating)
-- [ ] **F3.5**: RCA + fix -- restrict curvature search to lunar flyby region, add distance validation guard (-> /rca-bugfix -> Stage: RCA Complete)
-- [ ] **F3.6**: Implement fix (Stage: Implementing -> Resolved)
-- [ ] **F3.7**: Code review (-> /forge-review -> Stage: Reviewed)
-- [ ] **F3.8**: Verify Moon at ~38-41 su from Earth, trajectory does not pass through Moon, Moon centered in flyby loop (Stage: Verified)
+- [x] **F3.5**: Implement fix -- restrict curvature search to lunar flyby region, add distance validation guard (commit `64d94ee`, Stage: Resolved)
+- [x] **F3.6**: Re-investigate (6th time) -- Moon position NOW CORRECT at 40.98 su from Earth, but Moon visual sphere (0.5 su) too large for trajectory clearance (0.30 su). 168 points culled. (-> /investigate -> Stage: Investigating)
+- [ ] **F3.7**: RCA + fix -- reduce Moon sphere from 0.5 to 0.25 su, reduce culling from 0.55 to 0.30 su, adjust label/card offsets (-> /rca-bugfix -> Stage: RCA Complete)
+- [ ] **F3.8**: Implement fix (Stage: Implementing -> Resolved)
+- [ ] **F3.9**: Code review (-> /forge-review -> Stage: Reviewed)
+- [ ] **F3.10**: Verify: no trajectory gaps near Moon, Moon visible at lunar distance, label readable (Stage: Verified)
 
-**Recommended next step**: `/rca-bugfix` with investigation at `docs/investigations/2026-04-05_0200_moon_position_circumcenter_wrong_region.md`
+**Recommended next step**: `/rca-bugfix` with investigation at `docs/investigations/2026-04-05_0430_moon_sphere_too_large_trajectory_clipping.md`
 
 **Status**: In Progress
 **Stage**: Investigating
 **Resolved in session**: --
 **Verified in session**: --
-**Notes**: 5th manifestation across Sessions 2-5. The circumcenter algorithm itself is correct, but `findMaxCurvatureIndex()` returns the GLOBAL max curvature (parking orbit near Earth, curvature 0.0175) instead of the lunar flyby curvature peak (curvature 0.0009). Result: Moon at 24,450 km (2.44 su) from Earth instead of ~384,400 km (38.44 su). Fix: restrict curvature search to lunar region (around apoapsis), add validation that Moon must be 350,000-420,000 km from Earth. Key file: `src/components/Moon.tsx` (fix findMaxCurvatureIndex or replace with apoapsis-based approach).
+**Notes**: 6th investigation across Sessions 2-5. Moon POSITION is now correct (40.98 su from Earth). The remaining problem is Moon VISUAL SIZE: sphere radius 0.5 su (5,000 km) > trajectory closest approach 0.30 su (3,000 km), causing 168 trajectory points to be culled. Fix: reduce Moon sphere to 0.25 su, reduce culling radius to 0.30 su. Key files: `src/components/Moon.tsx` (sphere radius, label/card offsets), `src/components/Trajectory.tsx` (MOON_VISUAL_RADIUS).
 **GitHub Issue**: --
 **Project Item ID**: --
 
@@ -113,6 +115,8 @@ F3 and F4 are independent of each other and of F1/F2.
 | Investigating | 2026-04-05 01:00 UTC | 5 | [Investigation](../../investigations/2026-04-05_0100_trajectory_through_moon_race_condition.md) |
 | Implementing | 2026-04-05 01:30 UTC | 5 | Race condition fix applied (useOEM.ts Moon writes removed) |
 | Investigating | 2026-04-05 02:00 UTC | 5 | [Investigation](../../investigations/2026-04-05_0200_moon_position_circumcenter_wrong_region.md) -- circumcenter selects parking orbit, not lunar flyby |
+| Implementing | 2026-04-05 02:15 UTC | 5 | Commit `64d94ee` -- apoapsis-based search + validation guard. Moon position NOW CORRECT. |
+| Investigating | 2026-04-05 04:30 UTC | 5 | [Investigation](../../investigations/2026-04-05_0430_moon_sphere_too_large_trajectory_clipping.md) -- Moon visual sphere oversized; trajectory passes through it |
 
 ---
 
@@ -186,6 +190,7 @@ F3 and F4 are independent of each other and of F1/F2.
 
 | Date | Session | Action |
 |------|---------|--------|
+| 2026-04-05 04:30 UTC | 5 | F3 investigated AGAIN (6th time). Moon position now CORRECT (40.98 su from Earth) since commit `64d94ee`. Actual problem: Moon visual sphere (0.5 su = 5,000 km) is oversized relative to trajectory clearance (0.30 su = 3,000 km). 168 trajectory points culled, creating visible gap. Fix: reduce Moon sphere to 0.25 su, reduce culling to 0.30 su. Investigation: `docs/investigations/2026-04-05_0430_moon_sphere_too_large_trajectory_clipping.md`. |
 | 2026-04-05 02:00 UTC | 5 | F3 investigated AGAIN (5th manifestation). Root cause: `findMaxCurvatureIndex()` selects parking orbit near Earth (curvature 0.0175) instead of lunar flyby (curvature 0.0009). Moon renders at 2.44 su from Earth instead of ~38.44 su. Prior race condition fix was correctly applied but circumcenter input is wrong. Investigation: `docs/investigations/2026-04-05_0200_moon_position_circumcenter_wrong_region.md`. |
 | 2026-04-05 01:00 UTC | 5 | F3 re-investigated. Race condition found: useOEM.ts overwrites Moon.tsx's correct circumcenter position in store. Moon sphere renders at circumcenter but Trajectory.tsx culls at overwritten position -- trajectory passes through Moon. Prior RCA Fix 3 (unify source) was not implemented. Investigation: `docs/investigations/2026-04-05_0100_trajectory_through_moon_race_condition.md`. |
 | 2026-04-04 23:30 UTC | 5 | F3 stage -> Investigating. Root cause confirmed: Moon.tsx flybyPos algorithm geometrically flawed (offsets along wrong axis), causing 206 trajectory points culled (~13 hrs). Correct Moon center is ~11,000 km from computed position. Trajectory direction confirmed correct (counter-clockwise). Investigation: `docs/investigations/2026-04-04_2330_trajectory_near_moon_rendering.md`. |
