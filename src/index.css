@@ -11,6 +11,15 @@
   --color-hud-glass: rgba(10, 10, 30, 0.7);
   --color-hud-border: rgba(0, 212, 255, 0.2);
   --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* z-index scale — documented hierarchy */
+  --z-hud: 10;
+  --z-alerts: 20;
+  --z-backdrop: 30;
+  --z-dropdown: 40;
+  --z-chat: 45;
+  --z-chat-toggle: 50;
+  --z-tooltip: 55;
 }
 
 body {
@@ -24,6 +33,17 @@ body {
 #root {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-pad {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 @keyframes alert-glow-red {

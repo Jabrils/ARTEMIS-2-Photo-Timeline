@@ -20,11 +20,11 @@ export default function TelemetryCard({ label, value, unit, decimals = 0, color 
   }, [value, spring]);
 
   return (
-    <div className="bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-2 py-2 sm:px-4 sm:py-3 min-w-0 sm:min-w-[140px]">
+    <div className="bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-2 py-2 sm:px-4 sm:py-3 min-w-[100px] sm:min-w-[140px] overflow-hidden">
       <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400 mb-0.5 sm:mb-1">{label}</div>
       <div className="flex items-baseline gap-1">
         <motion.span
-          className="text-sm sm:text-xl font-bold font-mono"
+          className="text-sm sm:text-xl font-bold font-mono tabular-nums"
           style={{ color }}
         >
           {display}

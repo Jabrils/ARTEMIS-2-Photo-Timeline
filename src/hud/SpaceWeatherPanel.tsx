@@ -90,7 +90,7 @@ export default function SpaceWeatherPanel() {
   const tooltip = hovered ? TOOLTIP_CONFIG[hovered](kpIndex, solarWindSpeed, radiationZone) : null;
 
   return (
-    <div className="relative flex items-center gap-3 flex-wrap bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-3 py-2">
+    <div className="relative flex items-center gap-2 sm:gap-3 flex-wrap bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-2 sm:px-3 py-2">
       <span className="text-[10px] uppercase tracking-wider text-gray-400">Space Weather</span>
 
       {/* Kp Index */}
@@ -105,7 +105,7 @@ export default function SpaceWeatherPanel() {
 
       {/* Solar Wind */}
       <div
-        className="flex items-center gap-1 cursor-help"
+        className="hidden sm:flex items-center gap-1 cursor-help"
         onMouseEnter={() => setHovered('wind')}
         onMouseLeave={() => setHovered(null)}
       >
@@ -125,7 +125,7 @@ export default function SpaceWeatherPanel() {
 
       {/* Source badge */}
       <div
-        className="flex items-center gap-1 cursor-help"
+        className="hidden sm:flex items-center gap-1 cursor-help"
         onMouseEnter={() => setHovered('source')}
         onMouseLeave={() => setHovered(null)}
       >
@@ -141,7 +141,7 @@ export default function SpaceWeatherPanel() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full mb-2 left-0 z-50 bg-[rgba(10,10,30,0.9)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-3 py-2 min-w-[240px] max-w-[300px]"
+            className="absolute bottom-full mb-2 left-0 z-[var(--z-tooltip)] bg-[rgba(10,10,30,0.9)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-3 py-2 min-w-[240px] max-w-[300px]"
           >
             <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{tooltip.title}</div>
             <div className="text-sm text-white font-mono font-bold">{tooltip.value}</div>

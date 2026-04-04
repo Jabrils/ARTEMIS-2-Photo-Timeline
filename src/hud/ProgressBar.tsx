@@ -69,7 +69,7 @@ export default function ProgressBar() {
   }
 
   return (
-    <div className="bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-4 py-3 min-w-[200px] sm:min-w-[420px] col-span-2 sm:col-span-1 sm:flex-1 sm:mr-16">
+    <div className="bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-3 sm:px-4 py-3 min-w-0 sm:min-w-[420px] col-span-2 sm:col-span-1 sm:flex-1">
       <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Mission Progress</div>
       <div className="flex items-center gap-2">
         {/* Track wrapper — relative for markers, inner overflow-hidden for fill */}
@@ -87,7 +87,7 @@ export default function ProgressBar() {
           {milestoneData.map((m, i) => (
             <div
               key={m.name}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10"
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 p-2 -m-2 cursor-pointer"
               style={{ left: `${m.position}%` }}
               onMouseEnter={() => handleHover(i)}
               onMouseLeave={handleLeave}
@@ -123,8 +123,8 @@ export default function ProgressBar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
                     transition={{ duration: 0.15 }}
-                    className={`absolute bottom-full mb-3 z-50 bg-[rgba(10,10,30,0.95)] backdrop-blur-md border border-[rgba(0,212,255,0.3)] rounded-lg px-3 py-2 min-w-[180px] max-w-[240px] whitespace-normal shadow-lg ${
-                      m.position < 10 ? 'left-0' : m.position > 90 ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                    className={`absolute bottom-full mb-3 z-[var(--z-tooltip)] bg-[rgba(10,10,30,0.95)] backdrop-blur-md border border-[rgba(0,212,255,0.3)] rounded-lg px-3 py-2 min-w-[140px] sm:min-w-[180px] max-w-[calc(100vw-2rem)] sm:max-w-[240px] whitespace-normal shadow-lg ${
+                      m.position < 20 ? 'left-0' : m.position > 80 ? 'right-0' : 'left-1/2 -translate-x-1/2'
                     }`}
                   >
                     <div className="text-xs text-white font-mono font-bold">{m.name}</div>

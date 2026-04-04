@@ -61,7 +61,7 @@ export default memo(function AlertItem({ id, severity, message, timestamp, onDis
       </div>
       <button
         onClick={() => onDismiss(id)}
-        className="text-gray-500 hover:text-white transition-colors text-sm leading-none mt-0.5"
+        className="text-gray-500 hover:text-white transition-colors text-sm leading-none mt-0.5 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-1"
       >
         ×
       </button>

@@ -13,13 +13,13 @@ export default memo(function CrewPanel({ isOpen, onClose }: CrewPanelProps) {
       {isOpen && (
         <>
           {/* Click-outside overlay */}
-          <div className="fixed inset-0 z-30" onClick={onClose} />
+          <div className="fixed inset-0 z-[var(--z-backdrop)]" onClick={onClose} />
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-full mt-2 left-0 z-40 bg-[rgba(10,10,30,0.85)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg p-3 min-w-[200px]"
+            className="fixed sm:absolute inset-x-3 sm:inset-x-auto bottom-4 sm:bottom-auto sm:top-full sm:mt-2 sm:left-0 z-[var(--z-dropdown)] bg-[rgba(10,10,30,0.85)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg p-3 min-w-0 sm:min-w-[200px]"
           >
             <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Crew</div>
             <div className="flex flex-col gap-2">

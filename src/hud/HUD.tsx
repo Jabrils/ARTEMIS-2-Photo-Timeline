@@ -1,4 +1,5 @@
 import { useState, memo, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useMissionStore } from '../store/mission-store';
 import TelemetryCard from './TelemetryCard';
 import MissionClock from './MissionClock';
@@ -34,10 +35,12 @@ const MoonDistCard = memo(function MoonDistCard() {
 
 export default function HUD() {
   const [crewOpen, setCrewOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const handleCrewClose = useCallback(() => setCrewOpen(false), []);
+  const toggleMore = useCallback(() => setMoreOpen((prev) => !prev), []);
 
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2 sm:p-4 z-10">
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2 sm:p-4 z-[var(--z-hud)] safe-area-pad">
       <WeatherAlertDriver />
       {/* Top bar */}
       <div className="flex items-center justify-between pointer-events-auto">
@@ -47,7 +50,7 @@ export default function HUD() {
           </h1>
           <button
             onClick={() => setCrewOpen(!crewOpen)}
-            className={`px-1.5 py-0.5 rounded transition-colors ${crewOpen ? 'text-[#00d4ff]' : 'text-gray-400 hover:text-[#00d4ff]'}`}
+            className={`px-2 py-2 sm:px-1.5 sm:py-0.5 -mx-0.5 rounded transition-colors ${crewOpen ? 'text-[#00d4ff]' : 'text-gray-400 hover:text-[#00d4ff]'}`}
             title="Crew"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -67,18 +70,61 @@ export default function HUD() {
 
       {/* Bottom section */}
       <div className="flex flex-col gap-2 sm:gap-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pointer-events-auto">
+        {/* Secondary row — desktop only */}
+        <div className="hidden sm:flex items-center justify-between gap-2 pointer-events-auto">
           <DSNStatus />
           <SpaceWeatherPanel />
           <CameraControls />
         </div>
 
+        {/* Mobile "More" expandable section */}
+        <AnimatePresence>
+          {moreOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="sm:hidden flex flex-col gap-2 overflow-hidden pointer-events-auto"
+            >
+              <MoonDistCard />
+              <DSNStatus />
+              <SpaceWeatherPanel />
+              <CameraControls />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Primary telemetry — always visible */}
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 pointer-events-auto">
           <SpeedCard />
           <EarthDistCard />
-          <MoonDistCard />
+          <div className="hidden sm:block">
+            <MoonDistCard />
+          </div>
           <ProgressBar />
         </div>
+
+        {/* Mobile "More" toggle */}
+        <button
+          onClick={toggleMore}
+          className="sm:hidden flex items-center justify-center gap-1 py-2 text-[10px] text-gray-400 active:text-gray-200 pointer-events-auto"
+          aria-expanded={moreOpen}
+          aria-label={moreOpen ? 'Show less telemetry' : 'Show more telemetry'}
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+          {moreOpen ? 'Less' : 'More telemetry'}
+        </button>
       </div>
     </div>
   );

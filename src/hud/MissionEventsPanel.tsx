@@ -4,6 +4,15 @@ import { useMissionStore } from '../store/mission-store';
 import { MILESTONES } from '../data/mission-config';
 import { useMission } from '../hooks/useMission';
 
+const SORTED_MILESTONES = [...MILESTONES].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
+
+const SEVERITY_COLORS: Record<string, string> = {
+  info: '#00d4ff',
+  nominal: '#00ff88',
+  caution: '#ff8c00',
+  warning: '#ff4444',
+};
+
 export default function MissionEventsPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const alerts = useMissionStore((s) => s.alerts);
@@ -13,13 +22,10 @@ export default function MissionEventsPanel() {
   const elapsedHours = totalMs / 3_600_000;
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  // Sort milestones by time
-  const sortedMilestones = [...MILESTONES].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
-
   // Find current milestone index
   let currentIdx = 0;
-  for (let i = sortedMilestones.length - 1; i >= 0; i--) {
-    if (elapsedHours >= sortedMilestones[i].missionElapsedHours) {
+  for (let i = SORTED_MILESTONES.length - 1; i >= 0; i--) {
+    if (elapsedHours >= SORTED_MILESTONES[i].missionElapsedHours) {
       currentIdx = i;
       break;
     }
@@ -61,19 +67,12 @@ export default function MissionEventsPanel() {
     setHoveredMilestoneHours(null);
   }, [setHoveredMilestoneHours]);
 
-  const SEVERITY_COLORS: Record<string, string> = {
-    info: '#00d4ff',
-    nominal: '#00ff88',
-    caution: '#ff8c00',
-    warning: '#ff4444',
-  };
-
   return (
     <div className="relative pointer-events-auto">
       {/* Hamburger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative px-2 py-1.5 rounded transition-colors ${isOpen ? 'text-[#00d4ff]' : 'text-gray-400 hover:text-[#00d4ff]'}`}
+        className={`relative px-2.5 py-2.5 sm:px-2 sm:py-1.5 rounded transition-colors ${isOpen ? 'text-[#00d4ff]' : 'text-gray-400 hover:text-[#00d4ff]'}`}
         title="Mission Events"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -94,13 +93,13 @@ export default function MissionEventsPanel() {
         {isOpen && (
           <>
             {/* Click-outside overlay */}
-            <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} />
+            <div className="fixed inset-0 z-[var(--z-backdrop)]" onClick={() => setIsOpen(false)} />
             <motion.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full mt-2 right-0 z-40 bg-[rgba(10,10,30,0.92)] backdrop-blur-md border border-[rgba(0,212,255,0.2)] rounded-lg w-[320px] max-h-[70vh] overflow-y-auto shadow-lg"
+              className="absolute top-full mt-2 right-0 z-[var(--z-dropdown)] bg-[rgba(10,10,30,0.92)] backdrop-blur-md border border-[rgba(0,212,255,0.2)] rounded-lg w-[calc(100vw-1.5rem)] sm:w-[320px] max-h-[70vh] overflow-y-auto shadow-lg"
             >
               {/* Active Alerts */}
               {alerts.length > 0 && (
@@ -139,7 +138,7 @@ export default function MissionEventsPanel() {
                   Mission Timeline
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  {sortedMilestones.map((m, i) => {
+                  {SORTED_MILESTONES.map((m, i) => {
                     const isPast = elapsedHours >= m.missionElapsedHours;
                     const isCurrent = i === currentIdx;
 

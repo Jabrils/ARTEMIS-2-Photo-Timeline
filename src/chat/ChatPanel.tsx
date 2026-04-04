@@ -27,7 +27,7 @@ export default function ChatPanel() {
       {/* Toggle button */}
       <button
         onClick={toggleChat}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[rgba(0,212,255,0.15)] border border-hud-blue text-hud-blue flex items-center justify-center hover:bg-[rgba(0,212,255,0.25)] transition-all shadow-[0_0_15px_rgba(0,212,255,0.2)] pointer-events-auto"
+        className="fixed bottom-6 right-3 sm:right-6 z-[var(--z-chat-toggle)] w-12 h-12 rounded-full bg-[rgba(0,212,255,0.15)] border border-hud-blue text-hud-blue flex items-center justify-center hover:bg-[rgba(0,212,255,0.25)] transition-all shadow-[0_0_15px_rgba(0,212,255,0.2)] pointer-events-auto"
         title="Ask ARTEMIS AI"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -43,7 +43,7 @@ export default function ChatPanel() {
 
       {/* Chat panel */}
       {chatOpen && (
-        <div className="fixed right-6 bottom-20 z-40 w-[360px] h-[500px] bg-[rgba(10,10,26,0.95)] backdrop-blur-md border border-[rgba(0,212,255,0.2)] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] pointer-events-auto">
+        <div className="fixed inset-x-3 sm:inset-x-auto sm:right-6 bottom-20 z-[var(--z-chat)] w-auto sm:w-[360px] h-[70dvh] sm:h-[500px] max-h-[calc(100dvh-6rem)] bg-[rgba(10,10,26,0.95)] backdrop-blur-md border border-[rgba(0,212,255,0.2)] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] pointer-events-auto">
           {/* Header */}
           <div className="px-4 py-3 border-b border-[rgba(0,212,255,0.1)] flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#00ff88] shadow-[0_0_6px_rgba(0,255,136,0.5)]" />
