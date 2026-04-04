@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { parseOEM } from '../data/oem-parser';
 import { useMissionStore } from '../store/mission-store';
+import { SCALE_FACTOR } from '../data/mission-config';
 
 const OEM_POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const HORIZONS_POLL_INTERVAL = 30 * 60 * 1000; // 30 minutes
@@ -56,21 +57,21 @@ export function useOEM() {
           );
           if (posMatch) {
             useMissionStore.getState().setMoonPosition({
-              x: parseFloat(posMatch[1]),
-              y: parseFloat(posMatch[2]),
-              z: parseFloat(posMatch[3]),
+              x: parseFloat(posMatch[1]) / SCALE_FACTOR,
+              y: parseFloat(posMatch[2]) / SCALE_FACTOR,
+              z: parseFloat(posMatch[3]) / SCALE_FACTOR,
             });
           }
         }
       } catch (err) {
         if (controller.signal.aborted) return;
         console.warn('Horizons fetch failed:', err);
-        useMissionStore.getState().setMoonPosition({ x: 384400, y: 0, z: 0 });
+        useMissionStore.getState().setMoonPosition({ x: 384400 / SCALE_FACTOR, y: 0, z: 0 });
       }
     }
 
-    // Set fallback moon position immediately so moonDist works right away
-    useMissionStore.getState().setMoonPosition({ x: 384400, y: 0, z: 0 });
+    // Set fallback moon position immediately so moonDist works right away (scene units)
+    useMissionStore.getState().setMoonPosition({ x: 384400 / SCALE_FACTOR, y: 0, z: 0 });
 
     fetchOEM();
     fetchMoonPosition();

@@ -3,7 +3,7 @@
 # UI & Visual Regressions (Session 5) -- Findings Tracker
 
 **Created**: 2026-04-04 22:00 UTC
-**Last Updated**: 2026-04-04 20:45 UTC
+**Last Updated**: 2026-04-04 23:30 UTC
 **Origin**: User screenshot review at session 5 start -- 4 screenshots revealing layout, z-index, trajectory, and mobile overflow issues
 **Session**: 5
 **Scope**: HUD layout regressions (ProgressBar overlap/height), trajectory rendering near Moon, and mobile MissionEventsPanel overflow (4 component files, 4 issues)
@@ -17,7 +17,7 @@ Four UI and visual issues identified from user-provided screenshots at the start
 | # | Finding | Type | Severity | Status | Stage | Report |
 |---|---------|------|----------|--------|-------|--------|
 | F1 | ProgressBar overlays AI Chatbot panel | Defect | **High** | Resolved | Resolved | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
-| F3 | Trajectory around Moon renders problematic / direction questioned | Defect | **High** | Open | Open | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
+| F3 | Trajectory around Moon renders problematic / direction questioned | Defect | **High** | In Progress | RCA Complete | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 | F2 | ProgressBar sits higher than adjacent telemetry cards | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 | F4 | Mobile hamburger menu obscures most of screen | Debt | **Medium** | Open | Open | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 
@@ -83,19 +83,19 @@ F3 and F4 are independent of each other and of F1/F2.
 
 **Resolution tasks**:
 
-- [ ] **F3.1**: Investigate -- confirm Moon position accuracy relative to trajectory, verify culling radius, check trajectory direction against Artemis II mission profile (-> /investigate -> Stage: Investigating)
-- [ ] **F3.2**: RCA + fix design -- adjust Moon position calculation and/or culling approach (-> /rca-bugfix -> Stage: RCA Complete)
+- [x] **F3.1**: Investigate -- confirm Moon position accuracy relative to trajectory, verify culling radius, check trajectory direction against Artemis II mission profile (-> /investigate -> Stage: Investigating)
+- [x] **F3.2**: RCA + fix design -- circumcenter algorithm, reduce culling radius, unify Moon position source (-> /rca-bugfix -> Stage: RCA Complete)
 - [ ] **F3.3**: Implement fix (Stage: Implementing -> Resolved)
 - [ ] **F3.4**: Code review (-> /forge-review -> Stage: Reviewed)
 - [ ] **F3.5**: Verify trajectory renders cleanly near Moon from all camera presets (Stage: Verified)
 
-**Recommended approach**: `/investigate` -- recurring issue, need to confirm whether the problem is Moon position, culling radius, or both
+**Recommended next step**: `/wrought-implement` with prompt at `docs/prompts/2026-04-04_2130_trajectory_near_moon.md`
 
-**Status**: Open
-**Stage**: Open
+**Status**: In Progress
+**Stage**: RCA Complete
 **Resolved in session**: --
 **Verified in session**: --
-**Notes**: Recurring regression. Session 4 fixed trajectory culling (commit 26ef3a1) but the fix may be insufficient. Key files: `src/components/Trajectory.tsx`, `src/components/Moon.tsx`, `public/fallback-oem.asc`.
+**Notes**: Recurring regression. Root cause confirmed: Moon.tsx flybyPos algorithm is geometrically flawed -- offsets along Earth-to-max-distance radial, but Moon center is ~11,000 km perpendicular to that line. Closest trajectory approach to computed Moon is 3,684 km (0.37 scene), inside culling radius 0.7, causing 206 points (~13 hrs) to be culled. Correct Moon center gives closest approach of 8,251 km (0.83 scene), outside culling radius. Trajectory direction (counter-clockwise from north) is correct. Three fixes needed: (1) replace Moon position algorithm, (2) reduce culling radius, (3) unify Moon position source. Key files: `src/components/Trajectory.tsx`, `src/components/Moon.tsx`, `src/hooks/useOEM.ts`, `public/fallback-oem.asc`.
 **GitHub Issue**: --
 **Project Item ID**: --
 
@@ -103,6 +103,8 @@ F3 and F4 are independent of each other and of F1/F2.
 | Stage | Timestamp | Session | Artifact |
 |-------|-----------|---------|----------|
 | Open | 2026-04-04 22:00 UTC | 5 | [Finding Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
+| Investigating | 2026-04-04 23:30 UTC | 5 | [Investigation](../../investigations/2026-04-04_2330_trajectory_near_moon_rendering.md) |
+| RCA Complete | 2026-04-04 21:30 UTC | 5 | [RCA](../../RCAs/2026-04-04_2130_trajectory_near_moon.md), [Prompt](../../prompts/2026-04-04_2130_trajectory_near_moon.md) |
 
 ---
 
@@ -176,6 +178,7 @@ F3 and F4 are independent of each other and of F1/F2.
 
 | Date | Session | Action |
 |------|---------|--------|
+| 2026-04-04 23:30 UTC | 5 | F3 stage -> Investigating. Root cause confirmed: Moon.tsx flybyPos algorithm geometrically flawed (offsets along wrong axis), causing 206 trajectory points culled (~13 hrs). Correct Moon center is ~11,000 km from computed position. Trajectory direction confirmed correct (counter-clockwise). Investigation: `docs/investigations/2026-04-04_2330_trajectory_near_moon_rendering.md`. |
 | 2026-04-04 20:52 UTC | 5 | F1 + F2 -> Resolved. Forge-review LGTM (0C/0W/0S). Review: `docs/reviews/2026-04-04_2052_diff.md`. |
 | 2026-04-04 20:48 UTC | 5 | F1 + F2 implemented. 4 CSS class changes across 2 files. Build passes. `/wrought-implement` loop completed in 1 iteration. |
 | 2026-04-04 20:45 UTC | 5 | F1 + F2 stage -> RCA Complete. RCA: 3 factors for F1 (unconstrained flex, stacking context, no spatial boundary). Fix: `isolate` on HUD, `sm:pr-16` on bottom row, `sm:items-end`, ProgressBar `py-2 sm:py-3`. RCA: `docs/RCAs/2026-04-04_2045_progressbar_overlay_and_height.md`. Prompt: `docs/prompts/2026-04-04_2045_progressbar_overlay_and_height.md`. |
