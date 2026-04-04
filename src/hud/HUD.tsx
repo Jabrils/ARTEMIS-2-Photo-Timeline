@@ -30,7 +30,7 @@ const EarthDistCard = memo(function EarthDistCard() {
 
 const MoonDistCard = memo(function MoonDistCard() {
   const moonDist = useMissionStore((s) => s.spacecraft.moonDist);
-  return <TelemetryCard label="Moon" value={moonDist ?? 0} unit="km" color="#aaaaaa" />;
+  return <TelemetryCard label="Moon" value={moonDist ?? 0} unit="km" color="#00ff88" />;
 });
 
 export default function HUD() {
@@ -100,7 +100,7 @@ export default function HUD() {
         <div className="grid grid-cols-2 sm:flex sm:items-stretch gap-2 sm:gap-3 sm:pr-24 pointer-events-auto">
           <SpeedCard />
           <EarthDistCard />
-          <div className="hidden sm:block">
+          <div className="hidden sm:contents">
             <MoonDistCard />
           </div>
           <ProgressBar />
