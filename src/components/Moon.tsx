@@ -5,11 +5,25 @@ import { SCALE_FACTOR } from '../data/mission-config';
 
 type Vec3 = { x: number; y: number; z: number };
 
-/** Find the trajectory point with maximum angular rate change (sharpest curve). */
-function findMaxCurvatureIndex(data: Vec3[]): number {
+/** Find the trajectory point near the lunar flyby with maximum curvature.
+ *  First locates apoapsis (max Earth distance), then searches ±300 points
+ *  around it. This avoids selecting the parking orbit near Earth, which has
+ *  ~19x higher curvature than the lunar flyby. */
+function findLunarFlybyIndex(data: Vec3[]): number {
+  // Step 1: Find apoapsis (always near the Moon on a lunar flyby trajectory)
+  let maxDistSq = 0;
+  let apoapsisIdx = 0;
+  for (let i = 0; i < data.length; i++) {
+    const dSq = data[i].x * data[i].x + data[i].y * data[i].y + data[i].z * data[i].z;
+    if (dSq > maxDistSq) { maxDistSq = dSq; apoapsisIdx = i; }
+  }
+
+  // Step 2: Search for max curvature only in the lunar region
+  const searchStart = Math.max(1, apoapsisIdx - 300);
+  const searchEnd = Math.min(data.length - 2, apoapsisIdx + 300);
   let maxCurvature = 0;
-  let idx = Math.floor(data.length / 2);
-  for (let i = 1; i < data.length - 1; i++) {
+  let idx = apoapsisIdx;
+  for (let i = searchStart; i <= searchEnd; i++) {
     const prev = data[i - 1], curr = data[i], next = data[i + 1];
     const v1x = curr.x - prev.x, v1y = curr.y - prev.y, v1z = curr.z - prev.z;
     const v2x = next.x - curr.x, v2y = next.y - curr.y, v2z = next.z - curr.z;
@@ -52,15 +66,26 @@ export default function Moon() {
   const flybyPos = useMemo((): [number, number, number] => {
     if (!oemData || oemData.length === 0) return [38.44, 0, 0];
 
-    const sharpestIdx = findMaxCurvatureIndex(oemData);
+    const flybyIdx = findLunarFlybyIndex(oemData);
     const span = Math.min(50, Math.floor(oemData.length / 10));
-    const A = oemData[Math.max(0, sharpestIdx - span)];
-    const B = oemData[sharpestIdx];
-    const C = oemData[Math.min(oemData.length - 1, sharpestIdx + span)];
+    const A = oemData[Math.max(0, flybyIdx - span)];
+    const B = oemData[flybyIdx];
+    const C = oemData[Math.min(oemData.length - 1, flybyIdx + span)];
 
     const center = circumcenter3D(A, B, C);
-    if (!center) return [B.x / SCALE_FACTOR, B.y / SCALE_FACTOR, B.z / SCALE_FACTOR];
-    return [center.x / SCALE_FACTOR, center.y / SCALE_FACTOR, center.z / SCALE_FACTOR];
+    if (center) {
+      const distKm = Math.sqrt(center.x ** 2 + center.y ** 2 + center.z ** 2);
+      // Validation: Moon must be 350,000–420,000 km from Earth
+      if (distKm >= 350_000 && distKm <= 420_000) {
+        return [center.x / SCALE_FACTOR, center.y / SCALE_FACTOR, center.z / SCALE_FACTOR];
+      }
+    }
+
+    // Fallback: place Moon along apoapsis direction at nominal 384,400 km
+    const apo = oemData[flybyIdx];
+    const apoDist = Math.sqrt(apo.x ** 2 + apo.y ** 2 + apo.z ** 2);
+    const scale = 384_400 / apoDist;
+    return [apo.x * scale / SCALE_FACTOR, apo.y * scale / SCALE_FACTOR, apo.z * scale / SCALE_FACTOR];
   }, [oemData]);
 
   const earthDistKm = Math.sqrt(flybyPos[0] ** 2 + flybyPos[1] ** 2 + flybyPos[2] ** 2) * SCALE_FACTOR;
