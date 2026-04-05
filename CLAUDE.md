@@ -68,10 +68,10 @@ session_docs: []
 <!-- SESSION_CONFIG_END -->
 
 <!-- SESSION_HANDOFF_START -->
-@NEXT_SESSION_PROMPT_2026-04-04_1951.md
+@NEXT_SESSION_PROMPT_2026-04-05_1120.md
 <!-- SESSION_HANDOFF_END -->
 
 ---
 
-**Last Updated**: 2026-04-04
-**Last Session**: Session 4 -- Post-MVP features (bloom, crew timeline, space weather alerts), mobile-first HUD progressive disclosure (15 fixes), 2 forge-reviews + 2 simplify passes, hover info cards, milestone hamburger menu, 19 milestones, trajectory markers. 15 commits, 65 files, ~8250 lines.
+**Last Updated**: 2026-04-05
+**Last Session**: Session 5 -- UI regressions (F1-F4), Moon position definitive fix (7 investigations → JPL ephemeris), Earth true scale, Orion distance-adaptive scaling, milestone audit (all 19 verified against OEM), 6 Session 4 review warnings resolved, trajectory map inset (built then removed). 18 commits, 61 files, ~8400 lines.
