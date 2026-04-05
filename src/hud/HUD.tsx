@@ -9,7 +9,6 @@ import CameraControls from './CameraControls';
 import CrewPanel from './CrewPanel';
 import MissionEventsPanel from './MissionEventsPanel';
 import SpaceWeatherPanel from './SpaceWeatherPanel';
-import TrajectoryMap from './TrajectoryMap';
 import { useSpaceWeather } from '../hooks/useSpaceWeather';
 import { useAlerts } from '../hooks/useAlerts';
 
@@ -67,11 +66,6 @@ export default function HUD() {
           <MissionEventsPanel />
           <MissionClock />
         </div>
-      </div>
-
-      {/* Trajectory map inset — desktop only, pointer-events on component only */}
-      <div className="hidden sm:flex items-start justify-end">
-        <TrajectoryMap />
       </div>
 
       {/* Bottom section */}
