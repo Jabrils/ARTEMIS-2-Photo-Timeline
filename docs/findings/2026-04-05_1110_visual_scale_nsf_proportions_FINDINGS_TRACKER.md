@@ -17,7 +17,7 @@ Three visual proportion issues identified by comparing ARTEMIS tracker against t
 | # | Finding | Type | Severity | Status | Stage | Report |
 |---|---------|------|----------|--------|-------|--------|
 | F1 | Orion billboard is planet-sized in trajectory view (94% of Earth diameter) | Gap | **Medium** | In Progress | Blueprint Ready | [Report](2026-04-05_1110_visual_scale_nsf_proportions.md) |
-| F2 | No trajectory map inset (NSF uses always-visible figure-8 overview) | Gap | **Medium** | Open | Open | [Report](2026-04-05_1110_visual_scale_nsf_proportions.md) |
+| F2 | No trajectory map inset (NSF uses always-visible figure-8 overview) | Gap | **Medium** | In Progress | Blueprint Ready | [Report](2026-04-05_1110_visual_scale_nsf_proportions.md) |
 | F3 | Body sizes slightly oversized for trajectory view (2.0x vs NSF ~1.5x) | Gap | **Low** | Open | Open | [Report](2026-04-05_1110_visual_scale_nsf_proportions.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
