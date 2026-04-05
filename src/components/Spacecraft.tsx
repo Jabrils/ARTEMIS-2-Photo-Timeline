@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useTexture, Billboard, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -25,6 +25,8 @@ export default function Spacecraft() {
   const spriteRef = useRef<THREE.Mesh>(null);
   const texture = useTexture('/textures/orion.png');
   const [hovered, setHovered] = useState(false);
+  const [labelVisible, setLabelVisible] = useState(true);
+  const wasLabelVisible = useRef(true);
 
   const speed = useMissionStore((s) => s.spacecraft.speed);
   const earthDist = useMissionStore((s) => s.spacecraft.earthDist);
@@ -41,6 +43,19 @@ export default function Spacecraft() {
     const hasData = spacecraftPosition.x !== 0 || spacecraftPosition.y !== 0 || spacecraftPosition.z !== 0;
     groupRef.current.visible = hasData;
     groupRef.current.position.set(x, y, z);
+
+    // Distance-adaptive scaling — dot at overview, full sprite at close zoom
+    const camDist = camera.position.distanceTo(groupRef.current.position);
+    const t = THREE.MathUtils.clamp((camDist - 5) / 35, 0, 1);
+    const scale = THREE.MathUtils.lerp(1.0, 0.1, t);
+    groupRef.current.scale.setScalar(scale);
+
+    // Label visibility — only re-render on threshold crossing
+    const shouldShow = camDist < 25;
+    if (shouldShow !== wasLabelVisible.current) {
+      wasLabelVisible.current = shouldShow;
+      setLabelVisible(shouldShow);
+    }
 
     if (spriteRef.current && hasData) {
       _vel.set(spacecraftPosition.vx, spacecraftPosition.vy, spacecraftPosition.vz);
@@ -60,7 +75,7 @@ export default function Spacecraft() {
       <Billboard>
         <mesh
           ref={spriteRef}
-          onPointerOver={() => setHovered(true)}
+          onPointerOver={() => labelVisible && setHovered(true)}
           onPointerOut={() => setHovered(false)}
         >
           <planeGeometry args={[1.2, 1.05]} />
@@ -72,15 +87,17 @@ export default function Spacecraft() {
         <sphereGeometry args={[0.15, 16, 16]} />
         <meshBasicMaterial color="#00ff88" toneMapped={false} />
       </mesh>
-      <Html
-        position={[0, 0.8, 0]}
-        center
-        zIndexRange={[0, 0]}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div style={ORION_LABEL_STYLE}>ORION</div>
-      </Html>
-      {hovered && (
+      {labelVisible && (
+        <Html
+          position={[0, 0.8, 0]}
+          center
+          zIndexRange={[0, 0]}
+          style={{ pointerEvents: 'none' }}
+        >
+          <div style={ORION_LABEL_STYLE}>ORION</div>
+        </Html>
+      )}
+      {hovered && labelVisible && (
         <Html position={[1.0, 0, 0]} style={{ pointerEvents: 'none' }}>
           <div style={{
             background: 'rgba(10,10,30,0.9)',
