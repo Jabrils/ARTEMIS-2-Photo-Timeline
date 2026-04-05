@@ -129,7 +129,7 @@ export default function TrajectoryMap() {
   }
 
   return (
-    <div className="bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg p-1">
+    <div className="pointer-events-auto bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg p-1">
       <svg width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`}>
         {/* Past trajectory */}
         {pastStr && (

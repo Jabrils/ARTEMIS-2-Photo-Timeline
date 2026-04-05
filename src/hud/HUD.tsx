@@ -69,8 +69,8 @@ export default function HUD() {
         </div>
       </div>
 
-      {/* Trajectory map inset — desktop only */}
-      <div className="hidden sm:flex flex-1 items-start justify-end pointer-events-auto">
+      {/* Trajectory map inset — desktop only, pointer-events on component only */}
+      <div className="hidden sm:flex items-start justify-end">
         <TrajectoryMap />
       </div>
 

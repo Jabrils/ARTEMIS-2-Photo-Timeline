@@ -20,6 +20,7 @@ Four UI and visual issues identified from user-provided screenshots at the start
 | F3 | Trajectory around Moon renders problematic / direction questioned | Defect | **High** | In Progress | RCA Complete | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 | F2 | ProgressBar sits higher than adjacent telemetry cards | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
 | F4 | Mobile hamburger menu obscures most of screen | Debt | **Medium** | In Progress | Blueprint Ready | [Report](2026-04-04_2200_ui_visual_regressions_session5.md) |
+| F5 | Trajectory map inset blocks all 3D drag/rotate interaction | Defect | **High** | In Progress | Investigating | [Investigation](../../investigations/2026-04-05_1430_trajectory_map_blocks_orbit_controls.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -33,10 +34,12 @@ F1 (ProgressBar overlays chat) -- affects desktop layout, z-index interaction
 F2 (ProgressBar height mismatch) -- related to F1 (both involve ProgressBar sizing/layout)
 F3 (Trajectory near Moon) -- independent, 3D scene rendering
 F4 (Mobile menu too large) -- independent, mobile-only UX issue
+F5 (TrajectoryMap blocks drag) -- same class as F1 (flex-1 + pointer-events-auto overlay)
 ```
 
 F1 and F2 should be addressed together (both are ProgressBar layout issues in HUD.tsx bottom row).
 F3 and F4 are independent of each other and of F1/F2.
+F5 is same root cause pattern as F1 -- introduced in the TrajectoryMap commit.
 
 ---
 
@@ -188,10 +191,43 @@ F3 and F4 are independent of each other and of F1/F2.
 
 ---
 
+## F5: Trajectory Map Inset Blocks All 3D Drag/Rotate Interaction (High Defect)
+
+**Summary**: The trajectory map inset wrapper div added in commit `9f3ec74` uses `flex-1 pointer-events-auto`, causing it to expand to fill the entire middle viewport area (~60-70% of screen height). This invisible div intercepts all pointer events (mousedown, touchstart, pointermove) before they reach the `<Canvas>` element, completely blocking OrbitControls drag/rotate/pan on desktop.
+
+**Root cause**: `pointer-events-auto` applied to the wrapper div (which spans full width and most of the height due to `flex-1`) instead of only the small 180x140px `<TrajectoryMap />` component. Same class of bug as F1 (ProgressBar overlay).
+
+**Resolution tasks**:
+
+- [x] **F5.1**: Investigate -- confirm root cause and scope (-> /investigate -> Stage: Investigating)
+- [ ] **F5.2**: RCA + fix design -- move pointer-events-auto to TrajectoryMap only, remove flex-1 (-> /rca-bugfix -> Stage: RCA Complete)
+- [ ] **F5.3**: Implement fix (Stage: Implementing -> Resolved)
+- [ ] **F5.4**: Code review (-> /forge-review -> Stage: Reviewed)
+- [ ] **F5.5**: Verify drag/rotate/pan works on desktop with trajectory map visible (Stage: Verified)
+
+**Recommended next step**: `/rca-bugfix` with investigation at `docs/investigations/2026-04-05_1430_trajectory_map_blocks_orbit_controls.md`
+
+**Status**: In Progress
+**Stage**: Investigating
+**Resolved in session**: --
+**Verified in session**: --
+**Notes**: Desktop only (wrapper uses `hidden sm:flex`). Introduced in commit `9f3ec74` (most recent). Revert-safe but targeted fix preferred. Same pattern as F1 (flex-1 + pointer-events-auto = invisible overlay). Key file: `src/hud/HUD.tsx` lines 73-75.
+**GitHub Issue**: --
+**Project Item ID**: --
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-04-05 14:30 UTC | 5 | [Investigation](../../investigations/2026-04-05_1430_trajectory_map_blocks_orbit_controls.md) |
+| Investigating | 2026-04-05 14:30 UTC | 5 | Root cause confirmed: wrapper div flex-1 + pointer-events-auto blocks all 3D interaction |
+
+---
+
 ## Changelog
 
 | Date | Session | Action |
 |------|---------|--------|
+| 2026-04-05 14:30 UTC | 5 | F5 created + investigated. TrajectoryMap wrapper div (commit `9f3ec74`) uses `flex-1 pointer-events-auto` spanning ~60-70% of viewport, blocking all OrbitControls drag/rotate/pan on desktop. Same class of bug as F1. Investigation: `docs/investigations/2026-04-05_1430_trajectory_map_blocks_orbit_controls.md`. |
 | 2026-04-05 07:00 UTC | 5 | F3 investigated DEFINITIVELY (7th time). All 6 prior investigations addressed wrong root cause. The circumcenter algorithm computes the osculating circle center, NOT the Moon's gravitational center -- 5,034 km apart. JPL Horizons ephemeris confirms real Moon position gives 8,357 km trajectory clearance (vs 3,002 km with circumcenter). Fix: replace circumcenter with bundled JPL ephemeris (37 points, ~2 KB), set Moon to 0.347 su (2x proportional). Investigation: `docs/investigations/2026-04-05_0700_true_scale_moon_trajectory_clearance.md`. |
 | 2026-04-05 04:30 UTC | 5 | F3 investigated AGAIN (6th time). Moon position now CORRECT (40.98 su from Earth) since commit `64d94ee`. Actual problem: Moon visual sphere (0.5 su = 5,000 km) is oversized relative to trajectory clearance (0.30 su = 3,000 km). 168 trajectory points culled, creating visible gap. Fix: reduce Moon sphere to 0.25 su, reduce culling to 0.30 su. Investigation: `docs/investigations/2026-04-05_0430_moon_sphere_too_large_trajectory_clipping.md`. |
 | 2026-04-05 02:00 UTC | 5 | F3 investigated AGAIN (5th manifestation). Root cause: `findMaxCurvatureIndex()` selects parking orbit near Earth (curvature 0.0175) instead of lunar flyby (curvature 0.0009). Moon renders at 2.44 su from Earth instead of ~38.44 su. Prior race condition fix was correctly applied but circumcenter input is wrong. Investigation: `docs/investigations/2026-04-05_0200_moon_position_circumcenter_wrong_region.md`. |
@@ -220,3 +256,5 @@ F3 and F4 are independent of each other and of F1/F2.
 | `src/components/Moon.tsx` | F3 -- Moon position calculation |
 | `src/hud/MissionEventsPanel.tsx` | F4 -- hamburger menu sizing |
 | `src/index.css` | F1 -- z-index hierarchy definition |
+| `src/hud/TrajectoryMap.tsx` | F5 -- trajectory map inset component |
+| [2026-04-05_1430_trajectory_map_blocks_orbit_controls.md](../../investigations/2026-04-05_1430_trajectory_map_blocks_orbit_controls.md) | F5 investigation report |
