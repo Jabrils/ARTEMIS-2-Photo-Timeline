@@ -133,21 +133,31 @@ function hostnameFromUri(uri: string): string {
 }
 
 async function generateTextResponse(messages: Array<{ role: string; text: string }>, systemPrompt: string, apiKey: string): Promise<ChatPart[]> {
-  const geminiBody = {
+  const baseBody = {
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.text }],
     })),
     generationConfig: { temperature: 0.7, maxOutputTokens: 2048, topP: 0.9 },
-    tools: [{ google_search: {} }],
   };
-  const response = await fetch(GEMINI_TEXT_URL, {
+  const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey };
+
+  // Try with search grounding first, fall back without it if the API rejects the tool
+  let response = await fetch(GEMINI_TEXT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(geminiBody),
+    headers,
+    body: JSON.stringify({ ...baseBody, tools: [{ google_search: {} }] }),
   });
-  if (!response.ok) throw new Error(`Gemini text API ${response.status}`);
+  if (!response.ok) {
+    // Search grounding may not be available — retry without tools
+    response = await fetch(GEMINI_TEXT_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(baseBody),
+    });
+    if (!response.ok) throw new Error(`Gemini text API ${response.status}`);
+  }
   const data = await response.json();
 
   const candidate = data.candidates?.[0];
