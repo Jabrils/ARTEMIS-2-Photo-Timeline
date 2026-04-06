@@ -10,7 +10,7 @@ export const QUICK_ANSWERS: QuickAnswer[] = [
   },
   {
     question: 'How long is the mission?',
-    answer: 'The Artemis II mission lasts approximately 10 days. It launched on April 1, 2026, and is expected to splashdown in the Pacific Ocean around April 10-11, 2026.',
+    answer: 'The Artemis II mission lasts about 9 days (217.53 hours). It launched on April 1, 2026, and is expected to splashdown in the Pacific Ocean on April 10, 2026, at approximately 8:07 PM EDT.',
   },
   {
     question: 'What is Orion?',
@@ -18,7 +18,7 @@ export const QUICK_ANSWERS: QuickAnswer[] = [
   },
   {
     question: "What's the trajectory?",
-    answer: 'Artemis II follows a free-return trajectory: launch from Kennedy Space Center, enter Earth orbit, perform Translunar Injection (TLI), coast to the Moon over ~4 days, fly approximately 8,900 km above the lunar far side, then return to Earth on a free-return path for Pacific Ocean splashdown.',
+    answer: 'Artemis II follows a free-return trajectory: launch from Kennedy Space Center, enter Earth orbit, complete a phasing orbit (2 revolutions), perform Translunar Injection (TLI) at T+25h13m, coast to the Moon over ~3.2 days, fly 6,543 km (4,066 mi) above the lunar far side, then return to Earth on a free-return path for Pacific Ocean splashdown.',
   },
   {
     question: 'When did it launch?',
@@ -34,11 +34,11 @@ export const QUICK_ANSWERS: QuickAnswer[] = [
   },
   {
     question: 'What is TLI?',
-    answer: 'Translunar Injection (TLI) is the critical engine burn that sends the spacecraft from Earth orbit onto a trajectory toward the Moon. For Artemis II, TLI occurs approximately 2 hours after launch using the Interim Cryogenic Propulsion Stage (ICPS).',
+    answer: 'Translunar Injection (TLI) is the critical engine burn that sends the spacecraft from Earth orbit onto a trajectory toward the Moon. For Artemis II, TLI occurs approximately 25 hours after launch (T+25h13m) at the second perigee of the phasing orbit, using the Orion European Service Module (ESM) engine for a 5-minute 50-second burn.',
   },
   {
     question: 'When does it return?',
-    answer: 'Artemis II is expected to return approximately 10 days after launch, around April 10-11, 2026. The Orion capsule will re-enter Earth\'s atmosphere at approximately 40,000 km/h and splashdown in the Pacific Ocean.',
+    answer: 'Artemis II is expected to return about 9 days after launch, on April 10, 2026, at approximately 8:07 PM EDT. The Orion capsule will re-enter Earth\'s atmosphere at approximately 40,000 km/h and splashdown in the Pacific Ocean off San Diego.',
   },
   {
     question: 'What is the Artemis program?',
@@ -54,11 +54,16 @@ export const QUICK_ANSWERS: QuickAnswer[] = [
   },
 ];
 
+// Pre-normalized questions computed once at module load
+const NORMALIZED_QA = QUICK_ANSWERS.map((qa) => ({
+  normalized: qa.question.toLowerCase().replace(/[?!.,]/g, ''),
+  answer: qa.answer,
+}));
+
 export function findQuickAnswer(question: string): string | null {
   const normalized = question.toLowerCase().trim().replace(/[?!.,]/g, '');
-  for (const qa of QUICK_ANSWERS) {
-    const qNorm = qa.question.toLowerCase().replace(/[?!.,]/g, '');
-    if (normalized.includes(qNorm) || qNorm.includes(normalized)) {
+  for (const qa of NORMALIZED_QA) {
+    if (normalized.includes(qa.normalized) || qa.normalized.includes(normalized)) {
       return qa.answer;
     }
   }

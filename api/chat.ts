@@ -44,11 +44,12 @@ const MISSION_FACTS = `You are ARTEMIS AI, an expert assistant for the Artemis I
 
 MISSION FACTS:
 - Launch: April 1, 2026, 6:35 PM EDT (22:35 UTC) from LC-39B, Kennedy Space Center, Florida
-- Duration: Approximately 10 days (return around April 10-11, 2026)
+- Duration: About 9 days (217.53 hours / 9.064 days). Splashdown: April 10, 2026, ~8:07 PM EDT (00:07 UTC April 11)
 - Crew: Reid Wiseman (Commander, NASA), Victor Glover (Pilot, NASA), Christina Koch (Mission Specialist, NASA), Jeremy Hansen (Mission Specialist, CSA - Canadian Space Agency)
 - Vehicle: Orion spacecraft atop Space Launch System (SLS) Block 1 rocket
-- Objective: First crewed Artemis mission. Test Orion's life support, navigation, and heat shield systems with humans aboard. Lunar flyby without landing.
-- Trajectory: Launch -> Earth orbit -> Translunar Injection (TLI) -> Outbound coast (~4 days) -> Lunar flyby approximately 8,900 km (5,500 miles) above the far side of the Moon -> Free return trajectory -> Earth re-entry -> Pacific Ocean splashdown
+- Objective: First crewed Artemis mission. Test Orion's life support, navigation, and heat shield systems with humans aboard. Lunar flyby without landing. No EVA — this is a test flight to verify spacecraft systems with crew aboard.
+- Trajectory: Launch -> Earth orbit -> Perigee raise (T+49m) -> ICPS separation (T+3h24m) -> Phasing orbit (2 revolutions, ~22 hours) -> TLI burn at T+25h13m (Orion ESM engine, 5m50s burn) -> Outbound coast (~3.2 days) -> Lunar flyby at 6,543 km (4,066 mi) above the lunar far side (T+120h27m) -> Free return trajectory -> Earth re-entry -> Pacific Ocean splashdown (T+217h32m)
+- Key milestones: SRB sep T+2m08s | Core stage sep T+8m17s | Perigee raise T+49m | ICPS sep T+3h24m | TLI burn T+25h13m | MCC-1 T+48h | Lunar approach T+102h | Closest approach T+120h27m (6,543 km above far side) | Return burn T+139h | MCC-3 T+200h | CM/SM sep T+217h | Entry T+217h18m | Splashdown T+217h32m
 - Record: Expected to surpass Apollo 13's record of 400,171 km (248,655 miles) for farthest humans from Earth
 - Orion: Built by Lockheed Martin. Crew module can support 4 astronauts for up to 21 days. Features the largest heat shield ever built (5 meters diameter).
 - European Service Module (ESM): Built by ESA (European Space Agency) and Airbus. Provides propulsion, power (4 solar arrays), thermal control, water, and air.
@@ -58,8 +59,8 @@ MISSION FACTS:
 - Future missions: Artemis III (planned ~2027-2028) will land astronauts on the lunar south pole, the first Moon landing since Apollo 17 in 1972.
 
 RULES:
-- Answer ONLY from the facts above, the current date/time context below, and general publicly known space knowledge
-- If you don't know something, say "I don't have that specific information about the Artemis II mission"
+- Use the facts above as your primary source. You may supplement with general publicly known space and NASA knowledge.
+- If uncertain about mission-specific details, say "I don't have confirmed information about that specific detail."
 - Keep answers concise (2-4 sentences for simple questions, more for complex ones)
 - Be enthusiastic about space exploration
 - Never speculate about mission anomalies, safety incidents, or crew health
@@ -78,11 +79,13 @@ function buildSystemPrompt(userTimezone?: string): string {
   let phase = 'Pre-launch';
   const metHoursTotal = metMs / 3600000;
   if (metHoursTotal < 0) phase = 'Pre-launch';
-  else if (metHoursTotal < 5) phase = 'Earth Orbit / TLI';
-  else if (metHoursTotal < 96) phase = 'Outbound Coast (heading toward the Moon)';
-  else if (metHoursTotal < 130) phase = 'Lunar Flyby';
-  else if (metHoursTotal < 220) phase = 'Return Coast (heading back to Earth)';
-  else if (metHoursTotal < 240) phase = 'Entry / Splashdown';
+  else if (metHoursTotal < 3.40) phase = 'Launch & Earth Orbit';
+  else if (metHoursTotal < 25.23) phase = 'Phasing Orbit';
+  else if (metHoursTotal < 25.33) phase = 'Translunar Injection Burn';
+  else if (metHoursTotal < 102) phase = 'Outbound Coast (heading toward the Moon)';
+  else if (metHoursTotal < 139) phase = 'Lunar Flyby';
+  else if (metHoursTotal < 217.0) phase = 'Return Coast (heading back to Earth)';
+  else if (metHoursTotal < 217.53) phase = 'Entry & Splashdown';
   else phase = 'Mission Complete';
 
   let tzLine = '';
@@ -118,6 +121,10 @@ const VALID_ROLES = new Set(['user', 'model']);
 const GEMINI_TEXT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
 const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent';
 
+// Hoisted regexes for buildChartParts (S4: avoid re-creation per call)
+const ALTITUDE_RE = /altitude|height/;
+const VELOCITY_RE = /velocity|speed/;
+
 async function generateTextResponse(messages: Array<{ role: string; text: string }>, systemPrompt: string, apiKey: string): Promise<ChatPart[]> {
   const geminiBody = {
     system_instruction: { parts: [{ text: systemPrompt }] },
@@ -125,7 +132,8 @@ async function generateTextResponse(messages: Array<{ role: string; text: string
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.text }],
     })),
-    generationConfig: { temperature: 0.7, maxOutputTokens: 1024, topP: 0.9 },
+    generationConfig: { temperature: 0.7, maxOutputTokens: 2048, topP: 0.9 },
+    tools: [{ google_search: {} }],
   };
   const response = await fetch(GEMINI_TEXT_URL, {
     method: 'POST',
@@ -192,9 +200,9 @@ async function searchNasaImages(query: string): Promise<ChatPart[]> {
 
 function buildChartParts(text: string): ChatPart[] {
   const lower = text.toLowerCase();
-  const { chartType, title } = /altitude|height/.test(lower)
+  const { chartType, title } = ALTITUDE_RE.test(lower)
     ? { chartType: 'earth-distance' as const, title: 'Altitude (Distance from Earth) Over Time' }
-    : /velocity|speed/.test(lower)
+    : VELOCITY_RE.test(lower)
       ? { chartType: 'velocity' as const, title: 'Spacecraft Velocity Over Time' }
       : { chartType: 'earth-distance' as const, title: 'Distance from Earth Over Time' };
   return [

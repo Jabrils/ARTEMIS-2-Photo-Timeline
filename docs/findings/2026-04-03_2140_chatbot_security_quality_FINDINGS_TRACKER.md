@@ -3,7 +3,7 @@
 # Chatbot Security & Quality -- Findings Tracker
 
 **Created**: 2026-04-03 21:40 UTC
-**Last Updated**: 2026-04-05 11:25 UTC
+**Last Updated**: 2026-04-06 16:56 UTC
 **Origin**: `/forge-review --scope=diff` of multimodal chatbot implementation
 **Session**: 2
 **Scope**: Security vulnerabilities and quality issues in the chatbot pipeline (api/chat.ts, ChatMessage.tsx, ChatVideo.tsx)
@@ -26,6 +26,8 @@ Tracking security and quality remediation for the multimodal chatbot, sourced fr
 | F8 | Curated YouTube video IDs are unavailable — "Video unavailable" on every video request | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0030_chatbot_video_ids_broken.md) |
 | F9 | Text responses truncated mid-sentence — maxOutputTokens too low | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0030_chatbot_text_truncation.md) |
 | F10 | Image intent routes general requests to failing Gemini instead of NASA search | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0045_chatbot_image_intent_mismatch.md) |
+| F11 | Chatbot provides limited information — stale system prompt, wrong phase boundaries, no web search | Gap | **Medium** | Resolved | Resolved | [Investigation](../investigations/2026-04-06_1430_chatbot_llm_model_upgrade.md) |
+| F12 | No fetch timeout on external API calls | Gap | **Medium** | Open | Open | [Report](2026-04-06_1656_fetch_timeout_missing.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -39,6 +41,8 @@ F1 (XSS) is CRITICAL — fix first
 F2-F6 are independent Medium defects, can be fixed in any order
 F4 (video data drift) and F5 (type divergence) share the same root cause (api/ cannot import from src/)
 F7 is independent of F1-F6; relates to input validation path in F3's vicinity
+F11 (limited info) depends on F9 (maxOutputTokens was 500→1024, now going to 2048)
+F12 (fetch timeout) is independent of all other findings; affects same file (api/chat.ts) as F2, F3, F7, F11
 ```
 
 ---
@@ -332,6 +336,69 @@ F7 is independent of F1-F6; relates to input validation path in F3's vicinity
 
 ---
 
+## F11: Chatbot Provides Limited Information — Stale System Prompt, Wrong Phase Boundaries, No Web Search (Medium Gap)
+
+**Summary**: The ARTEMIS AI chatbot provides limited information quality. The `MISSION_FACTS` system prompt contains stale data ("approximately 10 days" vs actual 9.064 days), phase boundaries in `buildSystemPrompt()` don't match NASA-verified milestone timings, quick answers have the same errors, and there is no web search capability for real-time information. User proposed switching to OpenAI GPT-5.4-nano — investigation confirmed the limitation but determined GPT-5.4-nano is the wrong remedy ($0 budget violated, wrong model class, breaks multimodal pipeline).
+
+**Root cause**: System prompt was written once in Session 1 with approximate values and never updated after NASA-verified timings were established in Session 6. Phase boundaries are hardcoded magic numbers. Quick answers duplicate the stale values. No web search capability.
+
+**Resolution tasks**:
+
+- [x] **F11.1**: Investigate — confirm limitation scope, evaluate GPT-5.4-nano proposal (-> /investigate -> Stage: Investigating)
+- [x] **F11.2**: RCA + fix design — enrich system prompt, fix phases, add search grounding (-> /rca-bugfix -> Stage: RCA Complete)
+- [x] **F11.3**: Implementation plan (-> /plan -> Stage: Planned)
+- [x] **F11.4**: Implement fix (-> /wrought-rca-fix -> Stage: Implementing -> Resolved)
+- [ ] **F11.5**: Code review (-> /forge-review -> Stage: Reviewed)
+
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: --
+**Verified in session**: --
+**Notes**: Investigation rejected GPT-5.4-nano (no free tier, wrong model class, breaks image gen). RCA recommends: (A) enrich system prompt with NASA-verified facts, (B) fix phase boundaries from mission-config.ts, (C) correct quick answers, (D) add Gemini Search Grounding, (E) increase maxOutputTokens to 2048.
+**GitHub Issue**: --
+**Project Item ID**: --
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-04-06 14:30 UTC | 7 | [Investigation](../investigations/2026-04-06_1430_chatbot_llm_model_upgrade.md) |
+| RCA Complete | 2026-04-06 16:13 UTC | 7 | [RCA](../RCAs/2026-04-06_1430_chatbot_limited_information.md), [Prompt](../prompts/2026-04-06_1430_chatbot_limited_information.md) |
+| Planned | 2026-04-06 16:20 UTC | 7 | [Plan](../../.claude/plans/agile-rolling-zephyr.md) |
+| Implementing | 2026-04-06 16:20 UTC | 7 | `/wrought-rca-fix` — 1 iteration, build passes |
+| Resolved | 2026-04-06 16:25 UTC | 7 | All 5 fixes applied: phase boundaries, system prompt, maxOutputTokens, search grounding, quick answers |
+
+---
+
+## F12: No Fetch Timeout on External API Calls (Medium Gap)
+
+**Summary**: Three external `fetch` calls in `api/chat.ts` (Gemini text L134, Gemini image L154, NASA Images L181) have no `AbortController` or timeout. If any upstream API hangs, the Vercel serverless function remains open consuming resources until platform timeout.
+
+**Root cause**: Timeout handling was not included during MVP chatbot implementation. With Search Grounding now enabled (Session 7), there are 3 external dependencies that could hang.
+
+**Resolution tasks**:
+
+- [ ] **F12.1**: RCA + fix — add `AbortSignal.timeout(8000)` to all three fetch calls in `api/chat.ts` (-> /rca-bugfix -> Stage: RCA Complete)
+- [ ] **F12.2**: Implement fix (Stage: Implementing -> Resolved)
+- [ ] **F12.3**: Code review (-> /forge-review -> Stage: Reviewed)
+- [ ] **F12.4**: Verify fix (Stage: Verified)
+
+**Recommended approach**: `/rca-bugfix` — root cause is clear (missing timeout on all 3 fetch calls), fix is straightforward (`AbortSignal.timeout(8000)` on each call).
+
+**Status**: Open
+**Stage**: Open
+**Resolved in session**: --
+**Verified in session**: --
+**Notes**: Pre-existing issue from Session 2. Flagged by `/forge-review` W1 in `docs/reviews/2026-04-06_1656_diff.md`. Becomes more relevant with Search Grounding adding latency and a third external dependency.
+**GitHub Issue**: --
+**Project Item ID**: --
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-04-06 16:56 UTC | 7 | [Finding Report](2026-04-06_1656_fetch_timeout_missing.md) |
+
+---
+
 ## Changelog
 
 | Date | Session | Action |
@@ -347,6 +414,10 @@ F7 is independent of F1-F6; relates to input validation path in F3's vicinity
 | 2026-04-04 00:40 UTC | 3 | F8, F9 -> Verified. Deployed to Vercel. Video returns valid NASA video (_eeZQw9PBc0). Text response completes without truncation. |
 | 2026-04-04 00:45 UTC | 3 | F10 added from live testing. Image intent mismatch: NASA_IMAGE_RE too narrow, IMAGE_RE too broad. RCA complete. |
 | 2026-04-05 11:25 UTC | 6 | F8, F9 individual sections updated from Open → Verified (were resolved+verified in Session 3 per changelog, but individual sections never updated). F10 individual section added. |
+| 2026-04-06 14:30 UTC | 7 | F11 added: chatbot limited information — stale system prompt, wrong phase boundaries, no web search. User proposed GPT-5.4-nano switch — investigation rejected (no free tier, wrong model class). |
+| 2026-04-06 16:13 UTC | 7 | F11 stage -> RCA Complete. Root cause: stale MISSION_FACTS, hardcoded phase boundaries, no search grounding. Fix: enrich prompt with NASA-verified data, fix phases from mission-config.ts, add Gemini Search Grounding. RCA: docs/RCAs/2026-04-06_1430_chatbot_limited_information.md |
+| 2026-04-06 16:25 UTC | 7 | F11 -> Resolved. /wrought-rca-fix completed in 1 iteration. All 5 fixes: phase boundaries (9 phases from milestones), MISSION_FACTS enriched (duration/flyby/trajectory/milestones/EVA/rules), maxOutputTokens 1024→2048, Gemini Search Grounding added, 4 quick answers corrected. Build passes. |
+| 2026-04-06 16:56 UTC | 7 | F12 added from /forge-review W1: no fetch timeout on 3 external API calls in api/chat.ts (L134, L154, L181). Medium Gap, Open. |
 
 ---
 
@@ -361,3 +432,10 @@ F7 is independent of F1-F6; relates to input validation path in F3's vicinity
 | src/chat/ChatVideo.tsx | F6 |
 | src/data/artemis-videos.ts | F4 |
 | docs/reviews/2026-04-04_0004_diff.md | Source forge-review for F7 (W1) |
+| docs/investigations/2026-04-06_1430_chatbot_llm_model_upgrade.md | F11 investigation |
+| docs/RCAs/2026-04-06_1430_chatbot_limited_information.md | F11 RCA |
+| docs/prompts/2026-04-06_1430_chatbot_limited_information.md | F11 implementation prompt |
+| src/data/artemis-knowledge.ts | F11 (stale quick answers) |
+| src/data/mission-config.ts | F11 (source of truth for NASA-verified milestones) |
+| docs/findings/2026-04-06_1656_fetch_timeout_missing.md | F12 finding report |
+| docs/reviews/2026-04-06_1656_diff.md | Source forge-review for F12 (W1) |
