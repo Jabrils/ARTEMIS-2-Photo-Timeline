@@ -4,6 +4,13 @@ import type { ChatMessage as ChatMessageType, ChatPart } from '../hooks/useChat'
 import ChatImage from './ChatImage';
 import ChatChart from './ChatChart';
 import ChatVideo from './ChatVideo';
+import ChatSources from './ChatSources';
+
+const TYPING_DELAYS = [
+  { animationDelay: '0ms' },
+  { animationDelay: '150ms' },
+  { animationDelay: '300ms' },
+];
 
 const MD_BOLD = /\*\*(.*?)\*\*/g;
 const MD_ITALIC = /\*(.*?)\*/g;
@@ -33,6 +40,8 @@ function renderPart(part: ChatPart, index: number) {
       return <ChatChart key={index} part={part} />;
     case 'video':
       return <ChatVideo key={index} part={part} />;
+    case 'sources':
+      return <ChatSources key={index} part={part} />;
   }
 }
 
@@ -75,7 +84,7 @@ export function TypingIndicator() {
             <div
               key={i}
               className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"
-              style={{ animationDelay: `${i * 150}ms` }}
+              style={TYPING_DELAYS[i]}
             />
           ))}
         </div>

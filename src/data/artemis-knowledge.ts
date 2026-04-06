@@ -62,8 +62,11 @@ const NORMALIZED_QA = QUICK_ANSWERS.map((qa) => ({
 
 export function findQuickAnswer(question: string): string | null {
   const normalized = question.toLowerCase().trim().replace(/[?!.,]/g, '');
+  // Skip short/ambiguous queries — let the LLM handle them
+  if (normalized.length < 10) return null;
   for (const qa of NORMALIZED_QA) {
-    if (normalized.includes(qa.normalized) || qa.normalized.includes(normalized)) {
+    // Only match when user's input CONTAINS the full question text
+    if (normalized.includes(qa.normalized)) {
       return qa.answer;
     }
   }

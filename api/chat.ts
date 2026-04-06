@@ -59,13 +59,15 @@ MISSION FACTS:
 - Future missions: Artemis III (planned ~2027-2028) will land astronauts on the lunar south pole, the first Moon landing since Apollo 17 in 1972.
 
 RULES:
-- Use the facts above as your primary source. You may supplement with general publicly known space and NASA knowledge.
+- Use the mission facts above as your primary source for core mission parameters (crew, trajectory, timeline, vehicle specs).
+- For current events, news, mission status updates, or anything not covered by the facts above, use Google Search to find the latest information.
+- When your response includes information from web search, briefly note that it comes from web sources.
+- Provide thorough, informative answers. Use short answers for simple factual lookups; give detailed explanations for complex or multi-part questions.
+- Be enthusiastic about space exploration while maintaining accuracy.
 - If uncertain about mission-specific details, say "I don't have confirmed information about that specific detail."
-- Keep answers concise (2-4 sentences for simple questions, more for complex ones)
-- Be enthusiastic about space exploration
-- Never speculate about mission anomalies, safety incidents, or crew health
-- If asked about real-time telemetry data, direct users to the tracker dashboard
-- ALWAYS use the current date/time context below to determine mission status — the mission HAS launched`;
+- Never speculate about mission anomalies, safety incidents, or crew health.
+- If asked about real-time telemetry data, direct users to the tracker dashboard.
+- ALWAYS use the current date/time context below to determine mission status — the mission HAS launched.`;
 
 function buildSystemPrompt(userTimezone?: string): string {
   const now = new Date();
@@ -114,7 +116,8 @@ type ChatPart =
   | { type: 'image'; data: string; mimeType: string; alt?: string }
   | { type: 'nasa-image'; url: string; title: string; credit: string }
   | { type: 'chart'; chartType: 'altitude' | 'velocity' | 'earth-distance'; title: string }
-  | { type: 'video'; videoId: string; title: string };
+  | { type: 'video'; videoId: string; title: string }
+  | { type: 'sources'; items: Array<{ url: string; title: string }> };
 
 const VALID_ROLES = new Set(['user', 'model']);
 
@@ -124,6 +127,10 @@ const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/model
 // Hoisted regexes for buildChartParts (S4: avoid re-creation per call)
 const ALTITUDE_RE = /altitude|height/;
 const VELOCITY_RE = /velocity|speed/;
+
+function hostnameFromUri(uri: string): string {
+  try { return new URL(uri).hostname; } catch { return 'Source'; }
+}
 
 async function generateTextResponse(messages: Array<{ role: string; text: string }>, systemPrompt: string, apiKey: string): Promise<ChatPart[]> {
   const geminiBody = {
@@ -142,8 +149,36 @@ async function generateTextResponse(messages: Array<{ role: string; text: string
   });
   if (!response.ok) throw new Error(`Gemini text API ${response.status}`);
   const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'I could not generate a response.';
-  return [{ type: 'text', content: text }];
+
+  const candidate = data.candidates?.[0];
+  if (!candidate) {
+    return [{ type: 'text', content: 'I could not generate a response.' }];
+  }
+
+  // Concatenate ALL text parts (not just parts[0]) — search grounding may return multiple
+  const textParts = candidate.content?.parts ?? [];
+  const fullText = textParts
+    .filter((p: { text?: string }) => p.text)
+    .map((p: { text: string }) => p.text)
+    .join('\n') || 'I could not generate a response.';
+
+  const result: ChatPart[] = [{ type: 'text', content: fullText }];
+
+  // Extract grounding sources if present
+  const chunks = candidate.groundingMetadata?.groundingChunks;
+  if (Array.isArray(chunks) && chunks.length > 0) {
+    const items = chunks
+      .filter((c: { web?: { uri?: string; title?: string } }) => c.web?.uri)
+      .map((c: { web: { uri: string; title?: string } }) => ({
+        url: c.web.uri,
+        title: c.web.title || hostnameFromUri(c.web.uri),
+      }));
+    if (items.length > 0) {
+      result.push({ type: 'sources', items });
+    }
+  }
+
+  return result;
 }
 
 async function generateImage(prompt: string, apiKey: string): Promise<ChatPart[]> {

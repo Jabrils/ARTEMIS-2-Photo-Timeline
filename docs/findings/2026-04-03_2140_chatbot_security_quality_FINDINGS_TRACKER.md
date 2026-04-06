@@ -3,7 +3,7 @@
 # Chatbot Security & Quality -- Findings Tracker
 
 **Created**: 2026-04-03 21:40 UTC
-**Last Updated**: 2026-04-06 16:56 UTC
+**Last Updated**: 2026-04-06 18:00 UTC
 **Origin**: `/forge-review --scope=diff` of multimodal chatbot implementation
 **Session**: 2
 **Scope**: Security vulnerabilities and quality issues in the chatbot pipeline (api/chat.ts, ChatMessage.tsx, ChatVideo.tsx)
@@ -28,6 +28,7 @@ Tracking security and quality remediation for the multimodal chatbot, sourced fr
 | F10 | Image intent routes general requests to failing Gemini instead of NASA search | Defect | **Medium** | Verified | Verified | [Report](2026-04-04_0045_chatbot_image_intent_mismatch.md) |
 | F11 | Chatbot provides limited information — stale system prompt, wrong phase boundaries, no web search | Gap | **Medium** | Resolved | Resolved | [Investigation](../investigations/2026-04-06_1430_chatbot_llm_model_upgrade.md) |
 | F12 | No fetch timeout on external API calls | Gap | **Medium** | Open | Open | [Report](2026-04-06_1656_fetch_timeout_missing.md) |
+| F13 | Search grounding response discarded -- no citations, no sources, quick answer over-matching | Defect | **High** | Resolved | Resolved | [Investigation](../investigations/2026-04-06_1800_chatbot_web_search_upgrade.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -399,6 +400,43 @@ F12 (fetch timeout) is independent of all other findings; affects same file (api
 
 ---
 
+## F13: Search Grounding Response Discarded -- No Citations, No Sources, Quick Answer Over-Matching (High Defect)
+
+**Summary**: The F11 fix added `tools: [{ google_search: {} }]` to the Gemini API request body but the response parser (`generateTextResponse()`) only reads `candidates[0].content.parts[0].text`, silently discarding all grounding metadata: `groundingChunks` (source URLs), `groundingSupports` (citation mappings), `searchEntryPoint` (required Google Search widget), and `webSearchQueries`. Additionally, there is no `sources` ChatPart type to render citations in the UI. The quick answer system's bidirectional `includes()` matching intercepts many questions that should go to the LLM. The net effect is a chatbot that CLAIMS to have web search but effectively cannot surface any search-grounded information to users.
+
+**Root cause**: F11's implementation added the search grounding tool to the API request but did not modify the response parsing to handle the new response format. Same pattern as F8/F9: "added capability to request, forgot to parse the response." Additionally, `ChatPart` union has no `sources` variant and `ChatMessage` has no source renderer.
+
+**Resolution tasks**:
+
+- [x] **F13.1**: Investigate -- confirm scope, identify all defects (-> /investigate -> Stage: Investigating)
+- [x] **F13.2**: RCA + fix design -- parse grounding metadata, add sources ChatPart, fix quick answer matching, upgrade system prompt (-> /rca-bugfix -> Stage: RCA Complete)
+- [x] **F13.3**: Implementation plan (-> /plan -> Stage: Planned)
+- [x] **F13.4**: Implement fix (-> /wrought-rca-fix -> Stage: Implementing -> Resolved)
+- [ ] **F13.5**: Code review (-> /forge-review -> Stage: Reviewed)
+- [ ] **F13.6**: Verify fix (Stage: Verified)
+
+**Recommended approach**: `/rca-bugfix` -- root cause confirmed by investigation. Four changes needed: (1) parse grounding metadata in `generateTextResponse()`, (2) add `sources` ChatPart type + `ChatSources.tsx` renderer, (3) fix quick answer over-matching, (4) upgrade system prompt to leverage search.
+
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: --
+**Verified in session**: --
+**Notes**: User reported "this is NOT helpful at all!" after F11 fix. Investigation confirms F11 added search grounding to the request but never parsed the response. This is the same pattern as F8/F9 (Session 3). Four compounding defects identified.
+**GitHub Issue**: --
+**Project Item ID**: --
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-04-06 18:00 UTC | 7 | User report -- chatbot still not helpful after F11 |
+| Investigating | 2026-04-06 18:00 UTC | 7 | [Investigation](../investigations/2026-04-06_1800_chatbot_web_search_upgrade.md) |
+| RCA Complete | 2026-04-06 18:30 UTC | 7 | [RCA](../RCAs/2026-04-06_1800_chatbot_web_search_upgrade.md), [Prompt](../prompts/2026-04-06_1800_chatbot_web_search_upgrade.md) |
+| Planned | 2026-04-06 18:45 UTC | 7 | [Plan](../../.claude/plans/agile-rolling-zephyr.md) |
+| Implementing | 2026-04-06 18:45 UTC | 7 | `/wrought-rca-fix` — 1 iteration, build passes |
+| Resolved | 2026-04-06 18:50 UTC | 7 | All 7 tasks: grounding parser, sources ChatPart+renderer, prompt upgrade, quick answer fix |
+
+---
+
 ## Changelog
 
 | Date | Session | Action |
@@ -418,6 +456,9 @@ F12 (fetch timeout) is independent of all other findings; affects same file (api
 | 2026-04-06 16:13 UTC | 7 | F11 stage -> RCA Complete. Root cause: stale MISSION_FACTS, hardcoded phase boundaries, no search grounding. Fix: enrich prompt with NASA-verified data, fix phases from mission-config.ts, add Gemini Search Grounding. RCA: docs/RCAs/2026-04-06_1430_chatbot_limited_information.md |
 | 2026-04-06 16:25 UTC | 7 | F11 -> Resolved. /wrought-rca-fix completed in 1 iteration. All 5 fixes: phase boundaries (9 phases from milestones), MISSION_FACTS enriched (duration/flyby/trajectory/milestones/EVA/rules), maxOutputTokens 1024→2048, Gemini Search Grounding added, 4 quick answers corrected. Build passes. |
 | 2026-04-06 16:56 UTC | 7 | F12 added from /forge-review W1: no fetch timeout on 3 external API calls in api/chat.ts (L134, L154, L181). Medium Gap, Open. |
+| 2026-04-06 18:00 UTC | 7 | F13 added: Search grounding response silently discarded. High Defect. `generateTextResponse()` reads only `parts[0].text`, ignores all `groundingMetadata` (sources, citations, search widget). No `sources` ChatPart type exists. Quick answer over-matching intercepts LLM-bound queries. Same pattern as F8/F9. Investigation: docs/investigations/2026-04-06_1800_chatbot_web_search_upgrade.md |
+| 2026-04-06 18:30 UTC | 7 | F13 stage -> RCA Complete. 4 root causes confirmed: (1) response parser discards groundingMetadata, (2) no sources ChatPart/renderer, (3) system prompt doesn't instruct search leverage, (4) quick answer over-matching. 6-requirement fix: parse grounding, add sources UI, upgrade prompt, fix matching. RCA: docs/RCAs/2026-04-06_1800_chatbot_web_search_upgrade.md |
+| 2026-04-06 18:50 UTC | 7 | F13 -> Resolved. /wrought-rca-fix completed in 1 iteration. 7 tasks: (1) sources ChatPart client type, (2) ChatSources.tsx renderer, (3) ChatMessage.tsx wiring, (4) sources ChatPart server type, (5) grounding metadata parser (all text parts + groundingChunks), (6) system prompt RULES upgrade (search instructions, removed sentence limit), (7) quick answer unidirectional matching + 10-char threshold. Build passes, 1697 modules. |
 
 ---
 

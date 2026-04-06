@@ -1,12 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { findQuickAnswer } from '../data/artemis-knowledge';
 
+const USER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 export type ChatPart =
   | { type: 'text'; content: string }
   | { type: 'image'; data: string; mimeType: string; alt?: string }
   | { type: 'nasa-image'; url: string; title: string; credit: string }
   | { type: 'chart'; chartType: 'altitude' | 'velocity' | 'earth-distance'; title: string }
-  | { type: 'video'; videoId: string; title: string };
+  | { type: 'video'; videoId: string; title: string }
+  | { type: 'sources'; items: Array<{ url: string; title: string }> };
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -40,7 +43,7 @@ export function useChat() {
     setIsLoading(true);
     try {
       // Send only text for message history (strip parts — Gemini needs text-only)
-      const allMessages = [...messagesRef.current, userMsg].map((m) => ({
+      const allMessages = [...messagesRef.current.slice(-19), userMsg].map((m) => ({
         role: m.role,
         text: m.text,
       }));
@@ -50,7 +53,7 @@ export function useChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: allMessages,
-          userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          userTimezone: USER_TIMEZONE,
         }),
       });
 
