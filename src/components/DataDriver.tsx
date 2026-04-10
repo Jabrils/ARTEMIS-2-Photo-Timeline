@@ -89,9 +89,9 @@ export default function DataDriver() {
         ),
       },
       moonPosition: {
-        x: moonPos[0] / SCALE_FACTOR,
-        y: moonPos[1] / SCALE_FACTOR,
-        z: moonPos[2] / SCALE_FACTOR,
+        x: moonPos[0],
+        y: moonPos[1],
+        z: moonPos[2],
       },
     }));
   });
