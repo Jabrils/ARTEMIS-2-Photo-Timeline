@@ -3,7 +3,7 @@
 # Replayable Mission Visualization -- Findings Tracker
 
 **Created**: 2026-04-10 17:38 UTC
-**Last Updated**: 2026-04-10 18:30 UTC
+**Last Updated**: 2026-04-10 20:51 UTC
 **Origin**: `/research` — replayable mission visualization architecture
 **Session**: 8
 **Scope**: Virtual clock abstraction, timeline scrubber, and playback controls to make the mission visualization replayable after splashdown
@@ -16,10 +16,11 @@ Tracking the implementation of replay capability for the ARTEMIS mission visuali
 
 | # | Finding | Type | Severity | Status | Stage | Report |
 |---|---------|------|----------|--------|-------|--------|
-| F2 | Circular import — clearFiredMilestones() side effect in Zustand setter | Defect | **Critical** | Resolved | Resolved | [Report](2026-04-10_1830_replay_review_findings.md) |
-| F1 | 12 Date.now() dependencies prevent mission replay after splashdown | Gap | **High** | Resolved | Resolved | [Report](2026-04-10_1738_replayable_mission_visualization.md) |
-| F3 | 30s milestone check interval misses milestones at high replay rates | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-10_1830_replay_review_findings.md) |
-| F4 | Dual-write clock drift — ref vs store diverge up to 41 min at 10,000x | Defect | **Medium** | Resolved | Resolved | [Report](2026-04-10_1830_replay_review_findings.md) |
+| F2 | Circular import — clearFiredMilestones() side effect in Zustand setter | Defect | **Critical** | Verified | Verified | [Report](2026-04-10_1830_replay_review_findings.md) |
+| F1 | 12 Date.now() dependencies prevent mission replay after splashdown | Gap | **High** | Verified | Verified | [Report](2026-04-10_1738_replayable_mission_visualization.md) |
+| F3 | 30s milestone check interval misses milestones at high replay rates | Defect | **Medium** | Verified | Verified | [Report](2026-04-10_1830_replay_review_findings.md) |
+| F4 | Dual-write clock drift — ref vs store diverge up to 41 min at 10,000x | Defect | **Medium** | Verified | Verified | [Report](2026-04-10_1830_replay_review_findings.md) |
+| F5 | Moon renders at real-time ephemeris position instead of trajectory-aligned sim time | Defect | **High** | Resolved | Resolved | [Report](2026-04-10_2051_moon_position_drift.md) |
 
 **Status legend**: `Open` -> `In Progress` -> `Resolved` -> `Verified`
 **Stage legend**: `Open` -> `Investigating` / `Designing` -> `RCA Complete` / `Blueprint Ready` -> `Planned` -> `Implementing` -> `Reviewed` -> `Resolved` -> `Verified`
@@ -55,16 +56,16 @@ F1 (Virtual clock + replay) — single monolithic feature with these sub-compone
 - [x] **F1.2**: Blueprint + implementation prompt (-> /blueprint -> Stage: Blueprint Ready)
 - [x] **F1.3**: Implementation plan (-> /plan -> Stage: Planned)
 - [x] **F1.4**: Implement changes (Stage: Implementing -> Resolved)
-- [ ] **F1.5**: Code review (-> /forge-review -> Stage: Reviewed)
-- [ ] **F1.6**: Verify implementation (Stage: Verified)
+- [x] **F1.5**: Code review (-> /forge-review -> Stage: Reviewed)
+- [x] **F1.6**: Verify implementation (Stage: Verified)
 
 **Recommended approach**: `/design from-scratch F1 virtual-clock-and-replay` — design the virtual clock store slice, TimeControls UI, and migration strategy for all 8 affected files.
 
-**Status**: In Progress
-**Stage**: Reviewed
-**Resolved in session**: —
-**Verified in session**: —
-**Notes**: Research complete at `docs/research/2026-04-10_1400_replayable_mission_visualization.md`. 8 files to modify, 2 new. Core functions already accept arbitrary timestamps — migration is surgical.
+**Status**: Resolved
+**Stage**: Verified
+**Resolved in session**: 8
+**Verified in session**: 9
+**Notes**: Research complete at `docs/research/2026-04-10_1400_replayable_mission_visualization.md`. 8 files modified, 2 new. First review BLOCKED on C1 (circular import). F2/F3/F4 fixes applied, second review LGTM. Build passes. All Date.now() dependencies migrated to virtual clock.
 **GitHub Issue**: —
 **Project Item ID**: —
 
@@ -74,7 +75,10 @@ F1 (Virtual clock + replay) — single monolithic feature with these sub-compone
 | Open | 2026-04-10 17:38 UTC | 8 | [Finding Report](2026-04-10_1738_replayable_mission_visualization.md) |
 | Designing | 2026-04-10 17:38 UTC | 8 | [Design](../design/2026-04-10_1738_virtual_clock_and_replay.md) |
 | Blueprint Ready | 2026-04-10 17:38 UTC | 8 | [Blueprint](../blueprints/2026-04-10_1738_virtual_clock_and_replay.md) |
-| Reviewed | 2026-04-10 18:30 UTC | 8 | [Review](../reviews/2026-04-10_1830_diff.md) — BLOCKED (C1 critical) |
+| Reviewed | 2026-04-10 18:30 UTC | 8 | [Review](../reviews/2026-04-10_1830_diff.md) -- BLOCKED (C1 critical) |
+| Reviewed | 2026-04-10 19:00 UTC | 8 | [Review](../reviews/2026-04-10_1900_diff.md) -- LGTM (F2/F3/F4 resolved) |
+| Resolved | 2026-04-10 19:00 UTC | 8 | All defects fixed, build passes |
+| Verified | 2026-04-10 21:00 UTC | 9 | [Investigation](../investigations/2026-04-10_2100_replay_review_defects_f2_f3_f4.md) |
 
 ---
 
@@ -86,22 +90,30 @@ F1 (Virtual clock + replay) — single monolithic feature with these sub-compone
 
 **Resolution tasks**:
 
-- [ ] **F2.1**: Investigate — confirm scope and circular import behavior (-> /investigate)
-- [ ] **F2.2**: RCA + fix design (-> /rca-bugfix)
-- [ ] **F2.3**: Implementation plan (-> /plan)
-- [ ] **F2.4**: Implement fix (-> /wrought-rca-fix)
-- [ ] **F2.5**: Code review (-> /forge-review)
-- [ ] **F2.6**: Verify fix
+- [x] **F2.1**: Investigate — confirm scope and circular import behavior (-> /investigate)
+- [x] **F2.2**: RCA + fix design (-> /rca-bugfix)
+- [x] **F2.3**: Implementation plan (-> /plan)
+- [x] **F2.4**: Implement fix (-> /wrought-rca-fix)
+- [x] **F2.5**: Code review (-> /forge-review)
+- [x] **F2.6**: Verify fix
 
 **Recommended approach**: `/rca-bugfix` — cause is clear from the review. Move side effect to a `subscribe` listener in `useAlerts.ts` or call from TimeControls component.
 
-**Status**: Open
-**Stage**: Open
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: 8
+**Verified in session**: 9
+**Notes**: Circular import removed. `clearFiredMilestones` moved to module-level subscribe listener in `useAlerts.ts`. `setTimeMode` is now a pure store action. Second forge-review confirmed fix (LGTM).
 
 **Lifecycle**:
 | Stage | Timestamp | Session | Artifact |
 |-------|-----------|---------|----------|
 | Open | 2026-04-10 18:30 UTC | 8 | [Finding Report](2026-04-10_1830_replay_review_findings.md) |
+| RCA Complete | 2026-04-10 18:30 UTC | 8 | [RCA](../RCAs/2026-04-10_1830_replay_review_defects.md) |
+| Implementing | 2026-04-10 19:00 UTC | 8 | [Commit 8278413](../../) |
+| Reviewed | 2026-04-10 19:00 UTC | 8 | [Review](../reviews/2026-04-10_1900_diff.md) -- LGTM |
+| Resolved | 2026-04-10 19:00 UTC | 8 | Verified in code: no import from useAlerts in store |
+| Verified | 2026-04-10 21:00 UTC | 9 | [Investigation](../investigations/2026-04-10_2100_replay_review_defects_f2_f3_f4.md) |
 
 ---
 
@@ -113,22 +125,30 @@ F1 (Virtual clock + replay) — single monolithic feature with these sub-compone
 
 **Resolution tasks**:
 
-- [ ] **F3.1**: Investigate — confirm milestone skip behavior at various rates (-> /investigate)
-- [ ] **F3.2**: RCA + fix design (-> /rca-bugfix)
-- [ ] **F3.3**: Implementation plan (-> /plan)
-- [ ] **F3.4**: Implement fix (-> /wrought-rca-fix)
-- [ ] **F3.5**: Code review (-> /forge-review)
-- [ ] **F3.6**: Verify fix
+- [x] **F3.1**: Investigate — confirm milestone skip behavior at various rates (-> /investigate)
+- [x] **F3.2**: RCA + fix design (-> /rca-bugfix)
+- [x] **F3.3**: Implementation plan (-> /plan)
+- [x] **F3.4**: Implement fix (-> /wrought-rca-fix)
+- [x] **F3.5**: Code review (-> /forge-review)
+- [x] **F3.6**: Verify fix
 
 **Recommended approach**: `/rca-bugfix` — drive milestone checks from DataDriver's 4Hz tick or scale interval with rate.
 
-**Status**: Open
-**Stage**: Open
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: 8
+**Verified in session**: 9
+**Notes**: `setInterval(checkMilestones, 30_000)` removed. Replaced with `useMissionStore.subscribe` that fires at 4Hz. Range-based detection (`mh <= metHours && mh > prevMet`) ensures no milestone is skipped regardless of replay rate. Second forge-review confirmed fix (LGTM).
 
 **Lifecycle**:
 | Stage | Timestamp | Session | Artifact |
 |-------|-----------|---------|----------|
 | Open | 2026-04-10 18:30 UTC | 8 | [Finding Report](2026-04-10_1830_replay_review_findings.md) |
+| RCA Complete | 2026-04-10 18:30 UTC | 8 | [RCA](../RCAs/2026-04-10_1830_replay_review_defects.md) |
+| Implementing | 2026-04-10 19:00 UTC | 8 | [Commit 8278413](../../) |
+| Reviewed | 2026-04-10 19:00 UTC | 8 | [Review](../reviews/2026-04-10_1900_diff.md) -- LGTM |
+| Resolved | 2026-04-10 19:00 UTC | 8 | Verified in code: subscribe-based, range-based detection |
+| Verified | 2026-04-10 21:00 UTC | 9 | [Investigation](../investigations/2026-04-10_2100_replay_review_defects_f2_f3_f4.md) |
 
 ---
 
@@ -140,22 +160,62 @@ F1 (Virtual clock + replay) — single monolithic feature with these sub-compone
 
 **Resolution tasks**:
 
-- [ ] **F4.1**: Investigate — confirm visual drift at 1000x and 10000x (-> /investigate)
-- [ ] **F4.2**: RCA + fix design (-> /rca-bugfix)
-- [ ] **F4.3**: Implementation plan (-> /plan)
-- [ ] **F4.4**: Implement fix (-> /wrought-rca-fix)
-- [ ] **F4.5**: Code review (-> /forge-review)
-- [ ] **F4.6**: Verify fix
+- [x] **F4.1**: Investigate — confirm visual drift at 1000x and 10000x (-> /investigate)
+- [x] **F4.2**: RCA + fix design (-> /rca-bugfix)
+- [x] **F4.3**: Implementation plan (-> /plan)
+- [x] **F4.4**: Implement fix (-> /wrought-rca-fix)
+- [x] **F4.5**: Code review (-> /forge-review)
+- [x] **F4.6**: Verify fix
 
 **Recommended approach**: `/rca-bugfix` — batch `setSimTime` into the same `set()` call as `setSpacecraft`, or expose high-frequency time via shared ref for Trajectory.
 
-**Status**: Open
-**Stage**: Open
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: 8
+**Verified in session**: 9
+**Notes**: Three separate `set()` calls (`setSpacecraft`, `setSimTime`, `setMoonPosition`) replaced with single atomic `useMissionStore.setState()` call. `tickSimulatedTime` dead code removed. Spacecraft position and `simEpochMs` are now in the same store snapshot -- Trajectory reads consistent state. Second forge-review confirmed fix (LGTM).
 
 **Lifecycle**:
 | Stage | Timestamp | Session | Artifact |
 |-------|-----------|---------|----------|
 | Open | 2026-04-10 18:30 UTC | 8 | [Finding Report](2026-04-10_1830_replay_review_findings.md) |
+| RCA Complete | 2026-04-10 18:30 UTC | 8 | [RCA](../RCAs/2026-04-10_1830_replay_review_defects.md) |
+| Implementing | 2026-04-10 19:00 UTC | 8 | [Commit 8278413](../../) |
+| Reviewed | 2026-04-10 19:00 UTC | 8 | [Review](../reviews/2026-04-10_1900_diff.md) -- LGTM |
+| Resolved | 2026-04-10 19:00 UTC | 8 | Verified in code: single atomic setState |
+| Verified | 2026-04-10 21:00 UTC | 9 | [Investigation](../investigations/2026-04-10_2100_replay_review_defects_f2_f3_f4.md) |
+
+---
+
+## F5: Moon Renders at Real-Time Ephemeris Position Instead of Sim Time (High Defect)
+
+**Summary**: DataDriver passes unclamped `Date.now()` (LIVE mode) to `getMoonPosition()`. The Moon orbited ~48 degrees since the flyby, placing it ~32 su from the trajectory turnaround. User sees empty space where the Moon should be.
+
+**Root cause**: F1 migration moved Moon position from static `getMoonFlybyPosition()` in Moon.tsx to dynamic `getMoonPosition(simTimeRef.current)` in DataDriver. In LIVE mode, `simTimeRef.current = Date.now()` is unclamped, producing a Moon position that diverges from the trajectory.
+
+**Resolution tasks**:
+
+- [ ] **F5.1**: Investigate — confirm position values and rendering behavior (-> /investigate)
+- [ ] **F5.2**: RCA + fix design (-> /rca-bugfix)
+- [ ] **F5.3**: Implementation plan (-> /plan)
+- [ ] **F5.4**: Implement fix (-> /wrought-rca-fix)
+- [ ] **F5.5**: Code review (-> /forge-review)
+- [ ] **F5.6**: Verify fix in production
+
+**Recommended approach**: `/rca-bugfix` — cause is clear. Use clamped `simEpochMs` from the store (or compute clamped value from `simTimeRef.current`) for `getMoonPosition()` so the Moon position tracks the simulated time, not wall-clock time.
+
+**Status**: Open
+**Stage**: Open
+**Resolved in session**: —
+**Verified in session**: —
+**Notes**: The Moon IS rendering (moonDist telemetry shows 345,458 km) but ~32 su from the trajectory turnaround due to real Moon orbital motion since flyby. The incident at `docs/incidents/2026-04-10_2017_moon_missing_from_visualization.md` and hotfix `f5aea67` addressed the double SCALE_FACTOR bug but not this position divergence.
+**GitHub Issue**: —
+**Project Item ID**: —
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-04-10 20:51 UTC | 9 | [Finding Report](2026-04-10_2051_moon_position_drift.md) |
 
 ---
 
@@ -165,6 +225,8 @@ F1 (Virtual clock + replay) — single monolithic feature with these sub-compone
 |------|---------|--------|
 | 2026-04-10 17:38 UTC | 8 | Created tracker. F1 logged (High Gap). Research at `docs/research/2026-04-10_1400_replayable_mission_visualization.md`. |
 | 2026-04-10 18:30 UTC | 8 | F1 stage -> Reviewed (forge-review BLOCKED on C1). F2-F4 added from review `docs/reviews/2026-04-10_1830_diff.md`. F2 Critical Defect (circular import), F3 Medium Defect (milestone skipping), F4 Medium Defect (clock drift). |
+| 2026-04-10 21:00 UTC | 9 | F1 stage -> Verified (second review LGTM, blocker F2 resolved). F2/F3/F4 stages -> Verified (code confirmed fixed, build passes). Investigation: `docs/investigations/2026-04-10_2100_replay_review_defects_f2_f3_f4.md`. Tracker detail sections updated (were stale -- same pattern as Session 6). |
+| 2026-04-10 20:51 UTC | 9 | F5 logged (High Defect). Moon position drift from F1 migration — user screenshot confirms Moon invisible at trajectory turnaround. |
 
 ---
 

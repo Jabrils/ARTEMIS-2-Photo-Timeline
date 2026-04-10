@@ -28,7 +28,10 @@ export default function DataDriver() {
     const perfNow = performance.now();
 
     if (mode === 'live') {
-      simTimeRef.current = Date.now();
+      simTimeRef.current = Math.max(
+        LAUNCH_EPOCH.getTime(),
+        Math.min(Date.now(), MISSION_END_EPOCH.getTime())
+      );
     } else if (rate > 0) {
       const wallDelta = Math.min(perfNow - lastPerfNow.current, 100);
       simTimeRef.current = Math.max(
