@@ -3,7 +3,6 @@ import { useOEM } from './hooks/useOEM';
 import { useDSN } from './hooks/useDSN';
 import Scene from './components/Scene';
 import HUD from './hud/HUD';
-import ChatPanel from './chat/ChatPanel';
 
 function LoadingScreen() {
   return (
@@ -36,7 +35,6 @@ export default function App() {
     <div className="w-full h-full relative">
       <Scene />
       <HUD />
-      <ChatPanel />
     </div>
   );
 }

@@ -162,16 +162,13 @@ export default function CameraController() {
 
     switch (cameraMode) {
       case 'follow-orion': {
-        // Same distance as plan view, angled to highlight Orion's current position
-        // Uses velocity direction to tilt the view slightly toward where Orion is heading
         const sc = useMissionStore.getState().spacecraft;
-        const orionDir = new THREE.Vector3(sc.x, sc.y, sc.z).normalize();
-        // Blend: 70% orbital normal (so we see the full trajectory) + 30% from Orion's side
-        const blended = bbox.normal.clone().multiplyScalar(0.7)
-          .add(orionDir.multiplyScalar(0.3)).normalize();
-        const { camPos, target } = computePresetCamera(oemData, blended, isMobile);
-        targetPos.current.copy(camPos);
-        targetLookAt.current.copy(target);
+        const orionPos = new THREE.Vector3(sc.x / SCALE_FACTOR, sc.y / SCALE_FACTOR, sc.z / SCALE_FACTOR);
+        // Offset camera behind and above Orion relative to orbital normal
+        const offset = bbox.normal.clone().multiplyScalar(3)
+          .add(new THREE.Vector3(sc.vx, sc.vy, sc.vz).normalize().multiplyScalar(-2));
+        targetPos.current.copy(orionPos).add(offset);
+        targetLookAt.current.copy(orionPos);
         camera.up.copy(bbox.cameraUp);
         break;
       }
@@ -225,12 +222,11 @@ export default function CameraController() {
       if (oemData?.length) {
         const sc = useMissionStore.getState().spacecraft;
         const bbox = computeTrajectoryBBox(oemData);
-        const orionDir = new THREE.Vector3(sc.x, sc.y, sc.z).normalize();
-        const blended = bbox.normal.clone().multiplyScalar(0.7)
-          .add(orionDir.multiplyScalar(0.3)).normalize();
-        const dist = bbox.range * (isMobile ? 2.2 : 1.8);
-        targetPos.current.copy(bbox.center).addScaledVector(blended, dist);
-        targetLookAt.current.copy(bbox.center);
+        const orionPos = new THREE.Vector3(sc.x / SCALE_FACTOR, sc.y / SCALE_FACTOR, sc.z / SCALE_FACTOR);
+        const offset = bbox.normal.clone().multiplyScalar(3)
+          .add(new THREE.Vector3(sc.vx, sc.vy, sc.vz).normalize().multiplyScalar(-2));
+        targetPos.current.copy(orionPos).add(offset);
+        targetLookAt.current.copy(orionPos);
       }
     }
 

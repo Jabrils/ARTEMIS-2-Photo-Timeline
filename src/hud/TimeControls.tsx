@@ -9,9 +9,9 @@ export default function TimeControls() {
   const rate = useMissionStore((s) => s.timeControl.rate);
   const simEpochMs = useMissionStore((s) => s.timeControl.simEpochMs);
 
-  const setTimeMode = useMissionStore((s) => s.setTimeMode);
   const setPlaybackRate = useMissionStore((s) => s.setPlaybackRate);
   const setSimTime = useMissionStore((s) => s.setSimTime);
+  const setTimeMode = useMissionStore((s) => s.setTimeMode);
 
   const lastRateRef = useRef(100);
 
@@ -62,32 +62,6 @@ export default function TimeControls() {
     <div className="bg-hud-glass backdrop-blur-sm border border-hud-border rounded-lg px-3 py-2 pointer-events-auto">
       {/* Row 1: Mode + Transport + Rate */}
       <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs">
-        {/* Mode toggle */}
-        <div className="flex gap-1">
-          <button
-            onClick={() => setTimeMode('live')}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-              mode === 'live'
-                ? 'bg-[rgba(0,255,136,0.15)] border border-[rgba(0,255,136,0.4)] text-hud-green'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${mode === 'live' ? 'bg-hud-green animate-pulse' : 'bg-gray-600'}`} />
-            LIVE
-          </button>
-          <button
-            onClick={() => setTimeMode('sim')}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-              mode !== 'live'
-                ? 'bg-[rgba(0,212,255,0.15)] border border-hud-border text-hud-blue'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${mode !== 'live' ? 'bg-hud-blue' : 'bg-gray-600'}`} />
-            SIM
-          </button>
-        </div>
-
         {/* Transport — hidden on mobile */}
         <div className="hidden sm:flex items-center gap-1">
           <button onClick={jumpToStart} className="px-1 text-gray-400 hover:text-white" title="Jump to start">|&lt;</button>

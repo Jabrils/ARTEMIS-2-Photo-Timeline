@@ -104,8 +104,7 @@ export default function HUD() {
         </AnimatePresence>
 
         {/* Primary telemetry — always visible */}
-        {/* sm:pr-24 reserves space for chat toggle — see RCA docs/RCAs/2026-04-04_2045_progressbar_overlay_and_height.md */}
-        <div className="grid grid-cols-2 sm:flex sm:items-stretch gap-2 sm:gap-3 sm:pr-24 pointer-events-auto">
+        <div className="grid grid-cols-2 sm:flex sm:items-stretch gap-2 sm:gap-3 pointer-events-auto">
           <SpeedCard />
           <EarthDistCard />
           <div className="hidden sm:contents">

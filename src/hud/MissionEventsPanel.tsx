@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMissionStore } from '../store/mission-store';
 import { MILESTONES } from '../data/mission-config';
@@ -15,6 +15,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 export default function MissionEventsPanel() {
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const alerts = useMissionStore((s) => s.alerts);
   const dismissAlert = useMissionStore((s) => s.dismissAlert);
   const setHoveredMilestoneHours = useMissionStore((s) => s.setHoveredMilestoneHours);
@@ -155,48 +156,68 @@ export default function MissionEventsPanel() {
                   {SORTED_MILESTONES.map((m, i) => {
                     const isPast = elapsedHours >= m.missionElapsedHours;
                     const isCurrent = i === currentIdx;
+                    const isPhotoExpanded = expandedPhoto === m.name;
 
                     return (
-                      <div
-                        key={m.name}
-                        ref={isCurrent ? currentMilestoneRef : undefined}
-                        className={`flex items-center gap-2 px-2 py-1 sm:py-1.5 rounded cursor-pointer transition-colors ${
-                          isCurrent
-                            ? 'bg-[rgba(0,212,255,0.1)]'
-                            : 'hover:bg-[rgba(255,255,255,0.05)]'
-                        }`}
-                        onMouseEnter={() => handleMilestoneHover(m.missionElapsedHours)}
-                        onMouseLeave={handleMilestoneLeave}
-                      >
-                        {/* Status icon */}
-                        <span className={`text-sm w-5 text-center ${
-                          isCurrent
-                            ? 'text-[#00d4ff]'
-                            : isPast
-                              ? 'text-[#00ff88]'
-                              : 'text-gray-600'
-                        }`}>
-                          {isCurrent ? '\u2192' : isPast ? '\u2713' : '\u25CB'}
-                        </span>
+                      <Fragment key={m.name}>
+                        <div
+                          ref={isCurrent ? currentMilestoneRef : undefined}
+                          className={`flex items-center gap-2 px-2 py-1 sm:py-1.5 rounded transition-colors ${
+                            isCurrent
+                              ? 'bg-[rgba(0,212,255,0.1)]'
+                              : 'hover:bg-[rgba(255,255,255,0.05)]'
+                          } ${m.photo ? 'cursor-pointer' : 'cursor-default'}`}
+                          onMouseEnter={() => handleMilestoneHover(m.missionElapsedHours)}
+                          onMouseLeave={handleMilestoneLeave}
+                          onClick={() => m.photo && setExpandedPhoto(isPhotoExpanded ? null : m.name)}
+                        >
+                          {/* Status icon */}
+                          <span className={`text-sm w-5 text-center ${
+                            isCurrent ? 'text-[#00d4ff]' : isPast ? 'text-[#00ff88]' : 'text-gray-600'
+                          }`}>
+                            {isCurrent ? '\u2192' : isPast ? '\u2713' : '\u25CB'}
+                          </span>
 
-                        {/* Name */}
-                        <span className={`flex-1 text-[11px] sm:text-xs font-mono ${
-                          isCurrent
-                            ? 'text-[#00d4ff] font-bold'
-                            : isPast
-                              ? 'text-gray-300'
-                              : 'text-gray-500'
-                        }`}>
-                          {m.name}
-                        </span>
+                          {/* Name */}
+                          <span className={`flex-1 text-[11px] sm:text-xs font-mono ${
+                            isCurrent ? 'text-[#00d4ff] font-bold' : isPast ? 'text-gray-300' : 'text-gray-500'
+                          }`}>
+                            {m.name}
+                          </span>
 
-                        {/* Time */}
-                        <span className={`text-[10px] font-mono ${
-                          isCurrent ? 'text-[#00d4ff]/70' : 'text-gray-600'
-                        }`}>
-                          T+{m.missionElapsedHours}h
-                        </span>
-                      </div>
+                          {/* Camera icon for photo milestones */}
+                          {m.photo && (
+                            <span className={`text-[10px] transition-colors ${isPhotoExpanded ? 'text-[#00d4ff]' : 'text-gray-500 hover:text-gray-300'}`} title="View photo">
+                              \uD83D\uDCF7
+                            </span>
+                          )}
+
+                          {/* Time */}
+                          <span className={`text-[10px] font-mono ${isCurrent ? 'text-[#00d4ff]/70' : 'text-gray-600'}`}>
+                            T+{m.missionElapsedHours}h
+                          </span>
+                        </div>
+
+                        {/* Inline photo expansion */}
+                        <AnimatePresence>
+                          {m.photo && isPhotoExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden px-2 pb-2"
+                            >
+                              <img
+                                src={m.photo}
+                                alt={m.name}
+                                className="w-full rounded border border-[rgba(0,212,255,0.2)] object-cover max-h-48"
+                              />
+                              <p className="text-[9px] text-gray-500 mt-1">{m.description}</p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </Fragment>
                     );
                   })}
                 </div>

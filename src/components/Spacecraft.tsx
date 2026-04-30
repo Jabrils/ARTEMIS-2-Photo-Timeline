@@ -82,9 +82,9 @@ export default function Spacecraft() {
           <meshBasicMaterial map={texture} transparent alphaTest={0.01} toneMapped={false} />
         </mesh>
       </Billboard>
-      {/* Green glow behind Orion for visibility at distance */}
+      {/* Small dot for far-distance visibility */}
       <mesh>
-        <sphereGeometry args={[0.15, 16, 16]} />
+        <sphereGeometry args={[0.03, 8, 8]} />
         <meshBasicMaterial color="#00ff88" toneMapped={false} />
       </mesh>
       {labelVisible && (

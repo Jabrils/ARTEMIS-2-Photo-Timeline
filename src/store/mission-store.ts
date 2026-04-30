@@ -106,7 +106,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
     lastUpdated: 0,
   },
   alerts: [],
-  timeControl: { mode: 'live' as TimeMode, rate: 1, simEpochMs: Date.now() },
+  timeControl: { mode: 'replay' as TimeMode, rate: 1000, simEpochMs: LAUNCH_EPOCH.getTime() },
 
   setOemData: (data) => set({ oemData: data, isLoading: false }),
   setMoonPosition: (pos) => set({ moonPosition: pos }),

@@ -29,7 +29,7 @@ export default function Earth() {
         onPointerOut={() => setHovered(false)}
       >
         <sphereGeometry args={[0.637, 64, 64]} />
-        <meshStandardMaterial map={texture} emissive="#4488dd" emissiveIntensity={3.5} toneMapped={false} />
+        <meshBasicMaterial map={texture} toneMapped={false} />
       </mesh>
       {/* Atmosphere glow */}
       <mesh scale={1.08}>

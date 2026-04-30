@@ -4,7 +4,7 @@ import { useMissionStore } from '../store/mission-store';
 import { SCALE_FACTOR } from '../data/mission-config';
 
 export default function Moon() {
-  const texture = useTexture('/textures/moon.jpg');
+  const texture = useTexture('/textures/moon-texture.jpg');
   const [hovered, setHovered] = useState(false);
 
   // Moon position driven by DataDriver at 4Hz via virtual clock
@@ -23,7 +23,7 @@ export default function Moon() {
         onPointerOut={() => setHovered(false)}
       >
         <sphereGeometry args={[0.347, 32, 32]} />
-        <meshStandardMaterial map={texture} emissive="#cccccc" emissiveIntensity={1.5} toneMapped={false} />
+        <meshBasicMaterial map={texture} toneMapped={false} />
       </mesh>
       <Html
         position={[0, 0.6, 0]}

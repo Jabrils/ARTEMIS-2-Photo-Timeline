@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMission } from '../hooks/useMission';
 import { useMissionStore } from '../store/mission-store';
-import { MILESTONES, MISSION_DURATION_HOURS } from '../data/mission-config';
+import { MILESTONES, MISSION_DURATION_HOURS, LAUNCH_EPOCH } from '../data/mission-config';
 
 const TOTAL_MISSION_HOURS = MISSION_DURATION_HOURS;
 
@@ -10,6 +10,8 @@ export default function ProgressBar() {
   const { progress, totalMs } = useMission();
   const setHoveredMilestoneHours = useMissionStore((s) => s.setHoveredMilestoneHours);
   const externalHoveredHours = useMissionStore((s) => s.hoveredMilestoneHours);
+  const setSimTime = useMissionStore((s) => s.setSimTime);
+  const setTimeMode = useMissionStore((s) => s.setTimeMode);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const elapsedHours = totalMs / 3_600_000;
@@ -93,10 +95,14 @@ export default function ProgressBar() {
               onMouseLeave={handleLeave}
               onTouchStart={() => handleHover(i)}
               onTouchEnd={handleLeave}
+              onClick={() => {
+                setTimeMode('sim');
+                setSimTime(LAUNCH_EPOCH.getTime() + m.missionElapsedHours * 3_600_000);
+              }}
             >
               {i === currentIndex ? (
                 <motion.div
-                  className="w-1.5 h-1.5 sm:w-[6px] sm:h-[6px] rounded-full bg-[#00d4ff] cursor-pointer"
+                  className={`rounded-full bg-[#00d4ff] cursor-pointer ${m.photo ? 'w-2.5 h-2.5 sm:w-[10px] sm:h-[10px]' : 'w-1.5 h-1.5 sm:w-[6px] sm:h-[6px]'}`}
                   animate={{
                     boxShadow: [
                       '0 0 4px rgba(0,212,255,0.4)',
@@ -107,10 +113,9 @@ export default function ProgressBar() {
                 />
               ) : (
                 <div
-                  className={`w-1.5 h-1.5 sm:w-[6px] sm:h-[6px] rounded-full cursor-pointer ${
-                    m.isComplete
-                      ? 'bg-[#00ff88] shadow-[0_0_4px_rgba(0,255,136,0.3)]'
-                      : 'bg-gray-600'
+                  className={`rounded-full cursor-pointer ${m.photo
+                    ? 'w-2.5 h-2.5 sm:w-[10px] sm:h-[10px] bg-[#ff8c00] shadow-[0_0_6px_rgba(255,140,0,0.5)]'
+                    : `w-1.5 h-1.5 sm:w-[6px] sm:h-[6px] ${m.isComplete ? 'bg-[#00ff88] shadow-[0_0_4px_rgba(0,255,136,0.3)]' : 'bg-gray-600'}`
                   }`}
                 />
               )}
@@ -123,14 +128,23 @@ export default function ProgressBar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
                     transition={{ duration: 0.15 }}
-                    className={`absolute bottom-full mb-3 z-[var(--z-tooltip)] bg-[rgba(10,10,30,0.95)] backdrop-blur-md border border-[rgba(0,212,255,0.3)] rounded-lg px-3 py-2 min-w-[140px] sm:min-w-[180px] max-w-[calc(100vw-2rem)] sm:max-w-[240px] whitespace-normal shadow-lg ${
+                    className={`absolute bottom-full mb-3 z-[var(--z-tooltip)] bg-[rgba(10,10,30,0.95)] backdrop-blur-md border border-[rgba(0,212,255,0.3)] rounded-lg overflow-hidden min-w-[140px] sm:min-w-[180px] max-w-[calc(100vw-2rem)] sm:max-w-[240px] whitespace-normal shadow-lg ${
                       m.position < 20 ? 'left-0' : m.position > 80 ? 'right-0' : 'left-1/2 -translate-x-1/2'
                     }`}
                   >
-                    <div className="text-xs text-white font-mono font-bold">{m.name}</div>
-                    <div className="text-[11px] text-gray-300 mt-1 leading-relaxed">{m.description}</div>
-                    <div className="text-[10px] text-gray-500 mt-1">T+{m.missionElapsedHours}h</div>
-                    <div className="text-[10px] text-[#00d4ff]/70 mt-0.5 italic">See marker on trajectory</div>
+                    {m.photo && (
+                      <img
+                        src={m.photo}
+                        alt={m.name}
+                        className="w-full h-28 object-cover"
+                      />
+                    )}
+                    <div className="px-3 py-2">
+                      <div className="text-xs text-white font-mono font-bold">{m.name}</div>
+                      <div className="text-[11px] text-gray-300 mt-1 leading-relaxed">{m.description}</div>
+                      <div className="text-[10px] text-gray-500 mt-1">T+{m.missionElapsedHours}h</div>
+                      <div className="text-[10px] text-[#00d4ff]/70 mt-0.5 italic">See marker on trajectory</div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
