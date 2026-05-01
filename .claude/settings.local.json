@@ -7,7 +7,9 @@
       "Skill(design:*)",
       "Skill(blueprint)",
       "Skill(blueprint:*)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Skill(forge-review)",
+      "Skill(forge-review:*)"
     ]
   }
 }

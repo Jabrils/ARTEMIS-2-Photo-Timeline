@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMissionStore } from '../store/mission-store';
-import { MILESTONES } from '../data/mission-config';
+import { MILESTONES, LAUNCH_EPOCH } from '../data/mission-config';
 import { useMission } from '../hooks/useMission';
 
 const SORTED_MILESTONES = [...MILESTONES].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
@@ -15,10 +15,11 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 export default function MissionEventsPanel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const alerts = useMissionStore((s) => s.alerts);
   const dismissAlert = useMissionStore((s) => s.dismissAlert);
   const setHoveredMilestoneHours = useMissionStore((s) => s.setHoveredMilestoneHours);
+  const setSimTime = useMissionStore((s) => s.setSimTime);
+  const setTimeMode = useMissionStore((s) => s.setTimeMode);
   const { totalMs } = useMission();
   const elapsedHours = totalMs / 3_600_000;
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -156,20 +157,18 @@ export default function MissionEventsPanel() {
                   {SORTED_MILESTONES.map((m, i) => {
                     const isPast = elapsedHours >= m.missionElapsedHours;
                     const isCurrent = i === currentIdx;
-                    const isPhotoExpanded = expandedPhoto === m.name;
 
                     return (
                       <Fragment key={m.name}>
                         <div
                           ref={isCurrent ? currentMilestoneRef : undefined}
-                          className={`flex items-center gap-2 px-2 py-1 sm:py-1.5 rounded transition-colors ${
+                          className={`flex items-center gap-2 px-2 py-1 sm:py-1.5 rounded transition-colors cursor-default ${
                             isCurrent
                               ? 'bg-[rgba(0,212,255,0.1)]'
                               : 'hover:bg-[rgba(255,255,255,0.05)]'
-                          } ${m.photo ? 'cursor-pointer' : 'cursor-default'}`}
+                          }`}
                           onMouseEnter={() => handleMilestoneHover(m.missionElapsedHours)}
                           onMouseLeave={handleMilestoneLeave}
-                          onClick={() => m.photo && setExpandedPhoto(isPhotoExpanded ? null : m.name)}
                         >
                           {/* Status icon */}
                           <span className={`text-sm w-5 text-center ${
@@ -185,38 +184,28 @@ export default function MissionEventsPanel() {
                             {m.name}
                           </span>
 
-                          {/* Camera icon for photo milestones */}
-                          {m.photo && (
-                            <span className={`text-[10px] transition-colors ${isPhotoExpanded ? 'text-[#00d4ff]' : 'text-gray-500 hover:text-gray-300'}`} title="View photo">
-                              \uD83D\uDCF7
-                            </span>
-                          )}
-
                           {/* Time */}
                           <span className={`text-[10px] font-mono ${isCurrent ? 'text-[#00d4ff]/70' : 'text-gray-600'}`}>
                             T+{m.missionElapsedHours}h
                           </span>
                         </div>
 
-                        {/* Inline photo expansion */}
-                        <AnimatePresence>
-                          {m.photo && isPhotoExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden px-2 pb-2"
-                            >
-                              <img
-                                src={m.photo}
-                                alt={m.name}
-                                className="w-full rounded border border-[rgba(0,212,255,0.2)] object-cover max-h-48"
-                              />
-                              <p className="text-[9px] text-gray-500 mt-1">{m.description}</p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                        {/* Always-visible photo */}
+                        {m.photo && (
+                          <div className="px-2 pb-2">
+                            <img
+                              src={m.photo}
+                              alt={m.name}
+                              title="Jump to this moment"
+                              className="w-full rounded border border-[rgba(0,212,255,0.2)] object-cover max-h-48 cursor-pointer hover:border-[rgba(0,212,255,0.5)] transition-colors"
+                              onClick={() => {
+                                setTimeMode('sim');
+                                setSimTime(LAUNCH_EPOCH.getTime() + m.missionElapsedHours * 3_600_000);
+                              }}
+                            />
+                            <p className="text-[9px] text-gray-500 mt-1">{m.description}</p>
+                          </div>
+                        )}
                       </Fragment>
                     );
                   })}
