@@ -16,7 +16,7 @@ export default function ProgressBar() {
 
   const elapsedHours = totalMs / 3_600_000;
 
-  const { milestoneData, currentIndex } = useMemo(() => {
+  const { milestoneData, currentIndex, photoMilestones, currentPhotoIndex } = useMemo(() => {
     // Sort milestones by time for display (Belt Transit at T+5h comes before OTB-1 at T+8h)
     const sorted = [...MILESTONES].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
 
@@ -36,7 +36,16 @@ export default function ProgressBar() {
       }
     }
 
-    return { milestoneData: data, currentIndex: idx };
+    const photos = data.filter((m) => m.photo);
+    let photoIdx = 0;
+    for (let i = photos.length - 1; i >= 0; i--) {
+      if (elapsedHours >= photos[i].missionElapsedHours) {
+        photoIdx = i;
+        break;
+      }
+    }
+
+    return { milestoneData: data, currentIndex: idx, photoMilestones: photos, currentPhotoIndex: photoIdx };
   }, [elapsedHours]);
 
   // Compute external hover index from MissionEventsPanel
@@ -59,6 +68,13 @@ export default function ProgressBar() {
     parts.push(`${m}m`);
     return parts.join(' ');
   }, [nextMilestone, elapsedHours]);
+
+  function handlePhotoNav(index: number) {
+    const target = photoMilestones[index];
+    if (!target) return;
+    setTimeMode('sim');
+    setSimTime(LAUNCH_EPOCH.getTime() + target.missionElapsedHours * 3_600_000);
+  }
 
   function handleHover(i: number) {
     setHoveredIndex(i);
@@ -155,11 +171,29 @@ export default function ProgressBar() {
           {progress.toFixed(1)}%
         </span>
       </div>
-      {/* Next milestone countdown */}
-      <div className="text-[9px] sm:text-[10px] text-[#00d4ff]/70 mt-1">
-        {nextMilestone && countdown
-          ? `Next: ${nextMilestone.name} in ${countdown}`
-          : 'Mission Complete'}
+      {/* Next milestone countdown + photo nav arrows */}
+      <div className="flex items-center gap-2 mt-1">
+        <button
+          onClick={() => handlePhotoNav(currentPhotoIndex - 1)}
+          disabled={currentPhotoIndex === 0}
+          className="text-[#00d4ff] font-mono text-xs px-1 leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:text-white transition-colors"
+          aria-label="Previous photo"
+        >
+          ←
+        </button>
+        <div className="flex-1 text-[9px] sm:text-[10px] text-[#00d4ff]/70 truncate">
+          {nextMilestone && countdown
+            ? `Next: ${nextMilestone.name} in ${countdown}`
+            : 'Mission Complete'}
+        </div>
+        <button
+          onClick={() => handlePhotoNav(currentPhotoIndex + 1)}
+          disabled={currentPhotoIndex === photoMilestones.length - 1}
+          className="text-[#00d4ff] font-mono text-xs px-1 leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:text-white transition-colors"
+          aria-label="Next photo"
+        >
+          →
+        </button>
       </div>
     </div>
   );

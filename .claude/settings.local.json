@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(finding)",
+      "Skill(finding:*)",
+      "Skill(design)",
+      "Skill(design:*)",
+      "Skill(blueprint)",
+      "Skill(blueprint:*)",
+      "Bash(npm run *)"
+    ]
+  }
+}
