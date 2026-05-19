@@ -3,7 +3,7 @@
 # Photo Navigation — Findings Tracker
 
 **Created**: 2026-04-30 12:00 UTC
-**Last Updated**: 2026-05-01 10:15 UTC
+**Last Updated**: 2026-05-01 10:30 UTC
 **Origin**: User request to add prev/next arrow scrubbers and photo display panel
 **Session**: 7
 **Scope**: Photo navigation controls and in-scene photo display
@@ -19,6 +19,7 @@ Photo navigation controls and in-scene photo display for the Artemis II mission 
 | F1 | No prev/next photo navigation in Progress bar | Gap | **Low** | Resolved | Resolved | [Report](2026-04-30_1200_photo_nav_gap.md) |
 | F2 | No photo display panel in 3D scene viewport | Gap | **Low** | Resolved | Resolved | [Report](2026-04-30_1220_photo_display_panel_gap.md) |
 | F3 | MissionEventsPanel photos hidden behind expand toggle; no click-to-jump | Gap | **Low** | Resolved | Resolved | [Report](2026-05-01_1000_events_panel_photo_ux_gap.md) |
+| F4 | PhotoPanel PIP image has no fullscreen toggle | Gap | **Low** | Resolved | Resolved | [Report](2026-05-01_1030_photo_panel_fullscreen_gap.md) |
 
 **Status legend**: `Open` → `In Progress` → `Resolved` → `Verified`
 **Stage legend**: `Open` → `Designing` → `Blueprint Ready` → `Planned` → `Implementing` → `Reviewed` → `Resolved` → `Verified`
@@ -137,6 +138,40 @@ No dependencies. Standalone UI addition to ProgressBar.tsx.
 
 ---
 
+## F4: PhotoPanel PIP Image Has No Fullscreen Toggle (Low Gap)
+
+**Summary**: `PhotoPanel.tsx` renders a fixed `w-72 sm:w-80` PIP overlay with no `onClick` handler on the `<img>` element; there is no way to expand the photo to fullscreen or return it to PIP size.
+
+**Root cause**: Feature was never built — the initial implementation only added the PIP overlay; no expanded/fullscreen state or toggle was included.
+
+**Resolution tasks**:
+
+- [x] **F4.1**: Design approach (→ /design → Stage: Designing)
+- [x] **F4.2**: Blueprint + implementation prompt (→ /blueprint → Stage: Blueprint Ready)
+- [x] **F4.3**: Implement changes — add `expanded` state, fullscreen overlay on click, click-to-dismiss (Stage: Implementing → Resolved)
+- [ ] **F4.4**: Code review (→ /forge-review → Stage: Reviewed)
+- [ ] **F4.5**: Verify implementation (Stage: Verified)
+
+**Recommended approach**: `/design from-scratch F4 PhotoPanel fullscreen toggle`
+
+**Status**: Resolved
+**Stage**: Resolved
+**Resolved in session**: 7
+**Verified in session**: —
+**Notes**: Only file affected is `src/hud/PhotoPanel.tsx`
+**GitHub Issue**: —
+**Project Item ID**: —
+
+**Lifecycle**:
+| Stage | Timestamp | Session | Artifact |
+|-------|-----------|---------|----------|
+| Open | 2026-05-01 10:30 UTC | 7 | [Finding Report](2026-05-01_1030_photo_panel_fullscreen_gap.md) |
+| Designing | 2026-05-01 10:35 UTC | 7 | [Design Doc](../design/2026-05-01_1030_photo_panel_fullscreen.md) |
+| Blueprint Ready | 2026-05-01 10:38 UTC | 7 | [Blueprint](../blueprints/2026-05-01_1030_photo_panel_fullscreen.md) |
+| Resolved | 2026-05-01 10:42 UTC | 7 | [PhotoPanel.tsx](../../src/hud/PhotoPanel.tsx) — build passed, 2 iterations |
+
+---
+
 ## Changelog
 
 | Date | Session | Action |
@@ -153,6 +188,10 @@ No dependencies. Standalone UI addition to ProgressBar.tsx.
 | 2026-05-01 10:10 UTC | 7 | F3 stage → Designing. Design doc: docs/design/2026-05-01_1000_events_panel_photo_ux.md |
 | 2026-05-01 10:10 UTC | 7 | F3 stage → Blueprint Ready. Blueprint: docs/blueprints/2026-05-01_1000_events_panel_photo_ux.md. Prompt: docs/prompts/2026-05-01_1000_events_panel_photo_ux.md |
 | 2026-05-01 10:15 UTC | 7 | F3 → Resolved. Implemented in src/hud/MissionEventsPanel.tsx. Build passed (1 iteration). |
+| 2026-05-01 10:30 UTC | 7 | F4 logged (Low Gap). PhotoPanel fullscreen toggle. |
+| 2026-05-01 10:35 UTC | 7 | F4 stage → Designing. Design doc: docs/design/2026-05-01_1030_photo_panel_fullscreen.md |
+| 2026-05-01 10:38 UTC | 7 | F4 stage → Blueprint Ready. Blueprint: docs/blueprints/2026-05-01_1030_photo_panel_fullscreen.md. Prompt: docs/prompts/2026-05-01_1030_photo_panel_fullscreen.md |
+| 2026-05-01 10:42 UTC | 7 | F4 → Resolved. Implemented in src/hud/PhotoPanel.tsx. Build passed (2 iterations). |
 
 ---
 
@@ -172,3 +211,4 @@ No dependencies. Standalone UI addition to ProgressBar.tsx.
 | docs/design/2026-05-01_1000_events_panel_photo_ux.md | F3 design analysis |
 | docs/blueprints/2026-05-01_1000_events_panel_photo_ux.md | F3 blueprint |
 | docs/prompts/2026-05-01_1000_events_panel_photo_ux.md | F3 implementation prompt |
+| docs/findings/2026-05-01_1030_photo_panel_fullscreen_gap.md | F4 finding report |

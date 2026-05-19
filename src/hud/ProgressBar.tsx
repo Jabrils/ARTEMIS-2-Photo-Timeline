@@ -4,6 +4,8 @@ import { useMission } from '../hooks/useMission';
 import { useMissionStore } from '../store/mission-store';
 import { MILESTONES, MISSION_DURATION_HOURS, LAUNCH_EPOCH } from '../data/mission-config';
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 const TOTAL_MISSION_HOURS = MISSION_DURATION_HOURS;
 
 export default function ProgressBar() {
@@ -12,6 +14,9 @@ export default function ProgressBar() {
   const externalHoveredHours = useMissionStore((s) => s.hoveredMilestoneHours);
   const setSimTime = useMissionStore((s) => s.setSimTime);
   const setTimeMode = useMissionStore((s) => s.setTimeMode);
+  const simEpochMs = useMissionStore((s) => s.timeControl.simEpochMs);
+  const utcOffset = useMissionStore((s) => s.utcOffset);
+  const setUtcOffset = useMissionStore((s) => s.setUtcOffset);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const elapsedHours = totalMs / 3_600_000;
@@ -171,6 +176,37 @@ export default function ProgressBar() {
           {progress.toFixed(1)}%
         </span>
       </div>
+      {/* Wall clock + elapsed info row */}
+      <div className="flex items-center gap-1.5 mt-1">
+        <button
+          onClick={() => setUtcOffset(utcOffset - 1)}
+          disabled={utcOffset <= -12}
+          className="text-gray-500 hover:text-[#00d4ff] disabled:opacity-30 font-mono text-[10px] px-0.5 leading-none transition-colors"
+          title="Decrease UTC offset"
+        >−</button>
+        <span className="font-mono text-[9px] sm:text-[10px] text-[#00d4ff]/80 tabular-nums whitespace-nowrap">
+          {(() => {
+            const d = new Date(simEpochMs + utcOffset * 3_600_000);
+            const mon = MONTHS[d.getUTCMonth()];
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            const hh = String(d.getUTCHours()).padStart(2, '0');
+            const mm = String(d.getUTCMinutes()).padStart(2, '0');
+            const sign = utcOffset >= 0 ? '+' : '−';
+            return `${mon} ${day} ${hh}:${mm} UTC${sign}${Math.abs(utcOffset)}`;
+          })()}
+        </span>
+        <button
+          onClick={() => setUtcOffset(utcOffset + 1)}
+          disabled={utcOffset >= 14}
+          className="text-gray-500 hover:text-[#00d4ff] disabled:opacity-30 font-mono text-[10px] px-0.5 leading-none transition-colors"
+          title="Increase UTC offset"
+        >+</button>
+        <span className="text-gray-600 font-mono text-[9px]">·</span>
+        <span className="font-mono text-[9px] sm:text-[10px] text-gray-500 tabular-nums whitespace-nowrap">
+          T+{elapsedHours.toFixed(1)}h / {TOTAL_MISSION_HOURS.toFixed(1)}h ({progress.toFixed(1)}%)
+        </span>
+      </div>
+
       {/* Next milestone countdown + photo nav arrows */}
       <div className="flex items-center gap-2 mt-1">
         <button

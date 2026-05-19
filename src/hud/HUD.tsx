@@ -11,6 +11,7 @@ import MissionEventsPanel from './MissionEventsPanel';
 import SpaceWeatherPanel from './SpaceWeatherPanel';
 import TimeControls from './TimeControls';
 import PhotoPanel from './PhotoPanel';
+import PromoWidget from './PromoWidget';
 import { useSpaceWeather } from '../hooks/useSpaceWeather';
 import { useAlerts } from '../hooks/useAlerts';
 import { useTimeControlInit } from '../hooks/useTimeControlInit';
@@ -46,6 +47,7 @@ export default function HUD() {
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2 sm:p-4 z-[var(--z-hud)] isolate safe-area-pad">
       <PhotoPanel />
+      <PromoWidget />
       <WeatherAlertDriver />
       {/* Top bar */}
       <div className="flex items-center justify-between pointer-events-auto">

@@ -64,6 +64,7 @@ interface MissionStore {
   spaceWeather: SpaceWeatherState;
   alerts: Alert[];
   timeControl: TimeControl;
+  utcOffset: number;
 
   setOemData: (data: StateVector[]) => void;
   setMoonPosition: (pos: { x: number; y: number; z: number }) => void;
@@ -79,6 +80,7 @@ interface MissionStore {
   setTimeMode: (mode: TimeMode) => void;
   setPlaybackRate: (rate: number) => void;
   setSimTime: (epochMs: number) => void;
+  setUtcOffset: (n: number) => void;
 }
 
 export const useMissionStore = create<MissionStore>((set) => ({
@@ -107,6 +109,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
   },
   alerts: [],
   timeControl: { mode: 'replay' as TimeMode, rate: 1000, simEpochMs: LAUNCH_EPOCH.getTime() },
+  utcOffset: 0,
 
   setOemData: (data) => set({ oemData: data, isLoading: false }),
   setMoonPosition: (pos) => set({ moonPosition: pos }),
@@ -156,4 +159,5 @@ export const useMissionStore = create<MissionStore>((set) => ({
         simEpochMs: Math.max(LAUNCH_EPOCH.getTime(), Math.min(epochMs, MISSION_END_EPOCH.getTime())),
       },
     })),
+  setUtcOffset: (n) => set({ utcOffset: Math.max(-12, Math.min(14, n)) }),
 }));
