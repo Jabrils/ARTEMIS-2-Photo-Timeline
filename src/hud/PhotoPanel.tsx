@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMissionStore } from '../store/mission-store';
-import { MILESTONES, LAUNCH_EPOCH } from '../data/mission-config';
+import { LAUNCH_EPOCH } from '../data/mission-config';
 
 export default function PhotoPanel() {
-  const simEpochMs = useMissionStore((s) => s.timeControl.simEpochMs);
+  const simEpochMs  = useMissionStore((s) => s.timeControl.simEpochMs);
+  const milestones  = useMissionStore((s) => s.milestones);
 
   const activePhoto = useMemo(() => {
     const elapsedHours = (simEpochMs - LAUNCH_EPOCH.getTime()) / 3_600_000;
-    const candidates = MILESTONES
+    const candidates = milestones
       .filter((m) => m.photo && Math.abs(elapsedHours - m.missionElapsedHours) <= 0.5)
       .map((m) => ({ ...m, delta: Math.abs(elapsedHours - m.missionElapsedHours) }))
       .sort((a, b) => a.delta - b.delta);
     return candidates[0] ?? null;
-  }, [simEpochMs]);
+  }, [simEpochMs, milestones]);
 
   const stem = activePhoto?.photo
     ? activePhoto.photo.replace(/^.*\//, '').replace(/\.[^.]+$/, '')

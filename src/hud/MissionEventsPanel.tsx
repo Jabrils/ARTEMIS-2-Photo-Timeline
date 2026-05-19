@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMissionStore } from '../store/mission-store';
-import { MILESTONES, LAUNCH_EPOCH } from '../data/mission-config';
+import { LAUNCH_EPOCH } from '../data/mission-config';
 import { useMission } from '../hooks/useMission';
-
-const SORTED_MILESTONES = [...MILESTONES].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: '#00d4ff',
@@ -20,10 +18,13 @@ export default function MissionEventsPanel() {
   const setHoveredMilestoneHours = useMissionStore((s) => s.setHoveredMilestoneHours);
   const setSimTime = useMissionStore((s) => s.setSimTime);
   const setTimeMode = useMissionStore((s) => s.setTimeMode);
+  const milestones = useMissionStore((s) => s.milestones);
   const { totalMs } = useMission();
   const elapsedHours = totalMs / 3_600_000;
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const currentMilestoneRef = useRef<HTMLDivElement>(null);
+
+  const SORTED_MILESTONES = milestones; // already sorted by usePhotosInit
 
   // Find current milestone index
   let currentIdx = 0;

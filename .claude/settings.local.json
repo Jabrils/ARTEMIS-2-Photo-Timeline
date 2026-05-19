@@ -17,7 +17,21 @@
       "Bash(exiftool \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\\\\public\\\\photos\\\\55195413602_c4306fea38_o.jpg\")",
       "Bash(exiftool \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\\\\public\\\\photos\\\\55193049251_43a64bf74d_o.jpg\")",
       "Bash(curl -sL \"https://images-assets.nasa.gov/image/art002e004462/art002e004462~orig.jpg\" -o /tmp/art002e004462.jpg)",
-      "Bash(exiftool /tmp/art002e004462.jpg)"
+      "Bash(exiftool /tmp/art002e004462.jpg)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://images-assets.nasa.gov/search?q=artemis+II&media_type=image&year_start=2026&year_end=2026&page_size=1\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -A \"Mozilla/5.0\" \"https://images-assets.nasa.gov/search?q=artemis+II&media_type=image&year_start=2026&year_end=2026&page_size=1\")",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" \"https://images-assets.nasa.gov/search?q=artemis+II&media_type=image&year_start=2026&year_end=2026&page_size=2\")",
+      "Bash(curl -s \"https://images-assets.nasa.gov/search?q=artemis+II&media_type=image&year_start=2026&year_end=2026&page_size=2\")",
+      "Bash(curl -s \"https://api.nasa.gov/search?q=artemis+II&media_type=image&year_start=2026&year_end=2026\")",
+      "Bash(curl -s \"https://images-assets.nasa.gov/search?q=art002e&media_type=image&page_size=2\")",
+      "Bash(curl -s \"https://images-assets.nasa.gov/image/art002e009166/art002e009166~orig.jpg\" -o /dev/null -w \"%{http_code}\")",
+      "Bash(curl -s -H \"Referer: https://images.nasa.gov/\" \"https://images-assets.nasa.gov/search?q=art002e&media_type=image&page_size=2\")",
+      "Bash(curl -s \"https://images.nasa.gov/search?q=art002e&media=image&yearStart=2026&yearEnd=2026\" -L)",
+      "Bash(curl -s \"https://images-assets.nasa.gov/search?q=art002e&media_type=image&page_size=2&page=1\" -H \"Origin: https://images.nasa.gov\" -H \"Accept: application/json\" -v)",
+      "Bash(tee /tmp/extracted-ids.txt)",
+      "Bash(cd \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\" && cat /tmp/extracted-ids.txt | head -20 && echo \"...\" && cat /tmp/extracted-ids.txt | grep -v \"^art002\\\\|^NHQ\\\\|^iss\" | head -10)",
+      "Bash(node -e ' *)",
+      "Bash(node tools/extract-ids.mjs)"
     ]
   }
 }

@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useMissionStore } from '../store/mission-store';
-import { LAUNCH_EPOCH, SCALE_FACTOR, MILESTONES } from '../data/mission-config';
+import { LAUNCH_EPOCH, SCALE_FACTOR } from '../data/mission-config';
 import { lagrangeInterpolate } from '../data/interpolator';
 
 export default function MilestoneMarker() {
   const hoveredHours = useMissionStore((s) => s.hoveredMilestoneHours);
-  const oemData = useMissionStore((s) => s.oemData);
+  const oemData      = useMissionStore((s) => s.oemData);
+  const milestones   = useMissionStore((s) => s.milestones);
 
   const marker = useMemo(() => {
     if (hoveredHours === null || !oemData || oemData.length === 0) return null;
@@ -14,7 +15,7 @@ export default function MilestoneMarker() {
     const state = lagrangeInterpolate(oemData, targetEpochMs);
     if (!state) return null;
 
-    const milestone = MILESTONES.find((m) => m.missionElapsedHours === hoveredHours);
+    const milestone = milestones.find((m) => m.missionElapsedHours === hoveredHours);
 
     return {
       position: [
@@ -25,7 +26,7 @@ export default function MilestoneMarker() {
       name: milestone?.name ?? '',
       photo: milestone?.photo,
     };
-  }, [hoveredHours, oemData]);
+  }, [hoveredHours, oemData, milestones]);
 
   if (!marker) return null;
 

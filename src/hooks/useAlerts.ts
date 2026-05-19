@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useMissionStore } from '../store/mission-store';
 import type { RadiationZone, AlertSeverity, AlertType } from '../store/mission-store';
-import { LAUNCH_EPOCH, MILESTONES } from '../data/mission-config';
+import { LAUNCH_EPOCH } from '../data/mission-config';
 
 const DISMISS_MS: Record<AlertSeverity, number> = {
   info: 8_000,
@@ -92,7 +92,7 @@ export function useAlerts() {
       if (metHours === prevMet) return;
       prevMetRef.current = metHours;
 
-      for (const milestone of MILESTONES) {
+      for (const milestone of useMissionStore.getState().milestones) {
         const mh = milestone.missionElapsedHours;
         const t30Key = `${milestone.name}-t30`;
         const t0Key = `${milestone.name}-t0`;

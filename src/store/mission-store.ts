@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { StateVector } from '../data/oem-parser';
 import type { DsnStation } from '../data/dsn-parser';
 import { LAUNCH_EPOCH, MISSION_END_EPOCH } from '../data/mission-config';
+import type { Milestone } from '../data/mission-config';
 
 export interface SpacecraftState {
   x: number;
@@ -65,6 +66,7 @@ interface MissionStore {
   alerts: Alert[];
   timeControl: TimeControl;
   utcOffset: number;
+  milestones: Milestone[];
 
   setOemData: (data: StateVector[]) => void;
   setMoonPosition: (pos: { x: number; y: number; z: number }) => void;
@@ -81,6 +83,7 @@ interface MissionStore {
   setPlaybackRate: (rate: number) => void;
   setSimTime: (epochMs: number) => void;
   setUtcOffset: (n: number) => void;
+  setMilestones: (milestones: Milestone[]) => void;
 }
 
 export const useMissionStore = create<MissionStore>((set) => ({
@@ -110,6 +113,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
   alerts: [],
   timeControl: { mode: 'replay' as TimeMode, rate: 1000, simEpochMs: LAUNCH_EPOCH.getTime() },
   utcOffset: 0,
+  milestones: [],
 
   setOemData: (data) => set({ oemData: data, isLoading: false }),
   setMoonPosition: (pos) => set({ moonPosition: pos }),
@@ -160,4 +164,5 @@ export const useMissionStore = create<MissionStore>((set) => ({
       },
     })),
   setUtcOffset: (n) => set({ utcOffset: Math.max(-12, Math.min(14, n)) }),
+  setMilestones: (milestones) => set({ milestones }),
 }));

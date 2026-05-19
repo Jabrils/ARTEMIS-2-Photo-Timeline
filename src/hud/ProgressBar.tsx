@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMission } from '../hooks/useMission';
 import { useMissionStore } from '../store/mission-store';
-import { MILESTONES, MISSION_DURATION_HOURS, LAUNCH_EPOCH } from '../data/mission-config';
+import { MISSION_DURATION_HOURS, LAUNCH_EPOCH } from '../data/mission-config';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -17,13 +17,13 @@ export default function ProgressBar() {
   const simEpochMs = useMissionStore((s) => s.timeControl.simEpochMs);
   const utcOffset = useMissionStore((s) => s.utcOffset);
   const setUtcOffset = useMissionStore((s) => s.setUtcOffset);
+  const milestones = useMissionStore((s) => s.milestones);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const elapsedHours = totalMs / 3_600_000;
 
   const { milestoneData, currentIndex, photoMilestones, currentPhotoIndex } = useMemo(() => {
-    // Sort milestones by time for display (Belt Transit at T+5h comes before OTB-1 at T+8h)
-    const sorted = [...MILESTONES].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
+    const sorted = [...milestones].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
 
     const data = sorted.map((m, i) => {
       const position = (m.missionElapsedHours / TOTAL_MISSION_HOURS) * 100;
@@ -51,7 +51,7 @@ export default function ProgressBar() {
     }
 
     return { milestoneData: data, currentIndex: idx, photoMilestones: photos, currentPhotoIndex: photoIdx };
-  }, [elapsedHours]);
+  }, [elapsedHours, milestones]);
 
   // Compute external hover index from MissionEventsPanel
   const externalHoveredIndex = externalHoveredHours != null

@@ -15,10 +15,12 @@ import PromoWidget from './PromoWidget';
 import { useSpaceWeather } from '../hooks/useSpaceWeather';
 import { useAlerts } from '../hooks/useAlerts';
 import { useTimeControlInit } from '../hooks/useTimeControlInit';
+import { usePhotosInit } from '../hooks/usePhotosInit';
 
 function WeatherAlertDriver() {
   useSpaceWeather();
   useAlerts();
+  usePhotosInit();
   return null;
 }
 
