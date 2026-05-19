@@ -163,7 +163,12 @@ export default function ProgressBar() {
                     <div className="px-3 py-2">
                       <div className="text-xs text-white font-mono font-bold">{m.name}</div>
                       <div className="text-[11px] text-gray-300 mt-1 leading-relaxed">{m.description}</div>
-                      <div className="text-[10px] text-gray-500 mt-1">T+{m.missionElapsedHours}h</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-500">T+{m.missionElapsedHours}h</span>
+                        {m.focalLength && (
+                          <span className="text-[10px] text-gray-600">{m.focalLength}mm</span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-[#00d4ff]/70 mt-0.5 italic">See marker on trajectory</div>
                     </div>
                   </motion.div>

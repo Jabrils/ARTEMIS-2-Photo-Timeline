@@ -23,33 +23,35 @@ export interface Milestone {
   missionElapsedHours: number;
   description: string;
   photo?: string; // path relative to /public
+  focalLength?: number; // mm, from EXIF
 }
 
 export const MILESTONES: Milestone[] = [
-{ name: '55193049251 43A64Bf74D O', missionElapsedHours: 115.7399, description: '', photo: '/photos/55193049251_43a64bf74d_o.jpg' },
-  { name: '55193054686 6Ed51F4F15 O', missionElapsedHours: 120.7884, description: '', photo: '/photos/55193054686_6ed51f4f15_o.jpg' },
-  { name: '55193206753 03E267F92B O', missionElapsedHours: 117.1093, description: '', photo: '/photos/55193206753_03e267f92b_o.jpg' },
-  { name: '55193337359 950011Bf2D O', missionElapsedHours: 118.9135, description: '', photo: '/photos/55193337359_950011bf2d_o.jpg' },
-  { name: '55194789840 D7Cf899D17 O', missionElapsedHours: 134.3808, description: '', photo: '/photos/55194789840_d7cf899d17_o.jpg' },
-  { name: '55195413602 C4306Fea38 O', missionElapsedHours: 115.7927, description: '', photo: '/photos/55195413602_c4306fea38_o.jpg' },
-  { name: '55197506830 A07D2D54Ba O', missionElapsedHours: 122.0055, description: '', photo: '/photos/55197506830_a07d2d54ba_o.jpg' },
-  { name: '55197737178 9B35Dbcb12 O', missionElapsedHours: 119.9758, description: '', photo: '/photos/55197737178_9b35dbcb12_o.jpg' },
-  { name: '55199312161 F84Ab3Fd2E O', missionElapsedHours: 116.1087, description: '', photo: '/photos/55199312161_f84ab3fd2e_o.jpg' },
-  { name: '55204753657 Ff68Ec545E O', missionElapsedHours: 120.5687, description: '', photo: '/photos/55204753657_ff68ec545e_o.jpg' },
-  { name: '55206199989 Da419A08F0 O', missionElapsedHours: 212.0045, description: '', photo: '/photos/55206199989_da419a08f0_o.jpg' },
-  { name: 'Recovery Preparations', missionElapsedHours: 144.93, description: 'U.S. Navy MH-60 Seahawks from HSC-23 depart USS John P. Murtha during recovery training in the Pacific Ocean off the coast of California. Photo: NASA/Bill Ingalls', photo: '/photos/NHQ202604070017~orig.jpg' },
-  { name: 'Earth Sliver (Day 3)', missionElapsedHours: 48.96, description: 'A sliver of Earth illuminated against the blackness of space, photographed through an Orion spacecraft window on the third day of the mission. Credit: NASA', photo: '/photos/art002e009166~orig.jpg' },
-  { name: 'Earth Sliver (Day 3) II', missionElapsedHours: 49.06, description: 'Peering out the window of the Orion spacecraft at a sliver of the Earth illuminated against the blackness of space. Third day of the mission. Credit: NASA', photo: '/photos/art002e009174~orig.jpg' },
-  { name: 'Lunar Sphere of Influence', missionElapsedHours: 103.17, description: 'Before going to sleep on flight day 5, the crew photographed the Moon as Orion entered the lunar sphere of influence at 12:37 AM EDT. About an hour later Christina Koch said: "We are now falling to the Moon rather than rising away from Earth." Credit: NASA', photo: '/photos/art002e009210~orig.jpg' },
+  { name: '55193049251 43A64Bf74D O', missionElapsedHours: 115.7399, description: '', photo: '/photos/55193049251_43a64bf74d_o.jpg', focalLength: 220 },
+  { name: '55193054686 6Ed51F4F15 O', missionElapsedHours: 120.7884, description: '', photo: '/photos/55193054686_6ed51f4f15_o.jpg', focalLength: 400 },
+  { name: '55193206753 03E267F92B O', missionElapsedHours: 117.1093, description: '', photo: '/photos/55193206753_03e267f92b_o.jpg', focalLength: 180 },
+  { name: '55193337359 950011Bf2D O', missionElapsedHours: 118.9135, description: '', photo: '/photos/55193337359_950011bf2d_o.jpg', focalLength: 6.8 },
+  { name: '55194789840 D7Cf899D17 O', missionElapsedHours: 134.3808, description: '', photo: '/photos/55194789840_d7cf899d17_o.jpg', focalLength: 3 },
+  { name: '55195413602 C4306Fea38 O', missionElapsedHours: 115.7927, description: '', photo: '/photos/55195413602_c4306fea38_o.jpg', focalLength: 14 },
+  { name: '55197506830 A07D2D54Ba O', missionElapsedHours: 122.0055, description: '', photo: '/photos/55197506830_a07d2d54ba_o.jpg', focalLength: 350 },
+  { name: '55197737178 9B35Dbcb12 O', missionElapsedHours: 119.9758, description: '', photo: '/photos/55197737178_9b35dbcb12_o.jpg', focalLength: 35 },
+  { name: '55199312161 F84Ab3Fd2E O', missionElapsedHours: 116.1087, description: '', photo: '/photos/55199312161_f84ab3fd2e_o.jpg', focalLength: 24 },
+  { name: '55204753657 Ff68Ec545E O', missionElapsedHours: 120.5687, description: '', photo: '/photos/55204753657_ff68ec545e_o.jpg', focalLength: 400 },
+  { name: '55206199989 Da419A08F0 O', missionElapsedHours: 212.0045, description: '', photo: '/photos/55206199989_da419a08f0_o.jpg', focalLength: 1120 },
+  { name: 'Recovery Preparations', missionElapsedHours: 144.93, description: 'U.S. Navy MH-60 Seahawks from HSC-23 depart USS John P. Murtha during recovery training in the Pacific Ocean off the coast of California. Photo: NASA/Bill Ingalls', photo: '/photos/NHQ202604070017~orig.jpg', focalLength: 48 },
+  { name: 'Earth Sliver (Day 3)', missionElapsedHours: 48.96, description: 'A sliver of Earth illuminated against the blackness of space, photographed through an Orion spacecraft window on the third day of the mission. Credit: NASA', photo: 'https://images-assets.nasa.gov/image/art002e009166/art002e009166~orig.jpg', focalLength: 400 },
+  { name: 'Earth Sliver (Day 3) II', missionElapsedHours: 49.06, description: 'Peering out the window of the Orion spacecraft at a sliver of the Earth illuminated against the blackness of space. Third day of the mission. Credit: NASA', photo: '/photos/art002e009174~orig.jpg', focalLength: 24 },
+  { name: 'Earth Sliver (Day 3) III', missionElapsedHours: 54.53, description: 'A sliver of Earth illuminated against the blackness of space, photographed through an Orion spacecraft window. Credit: NASA', photo: 'https://images-assets.nasa.gov/image/art002e004462/art002e004462~orig.jpg', focalLength: 400 },
+  { name: 'Lunar Sphere of Influence', missionElapsedHours: 103.17, description: 'Before going to sleep on flight day 5, the crew photographed the Moon as Orion entered the lunar sphere of influence at 12:37 AM EDT. About an hour later Christina Koch said: "We are now falling to the Moon rather than rising away from Earth." Credit: NASA', photo: '/photos/art002e009210~orig.jpg', focalLength: 35 },
   { name: 'Lunar Crescent (Return)', missionElapsedHours: 143.03, description: 'The Artemis II crew captures a thin lunar crescent as they travel back to Earth, ~23h after the lunar flyby. OpNav session photographed by Christina Koch. Credit: NASA', photo: '/photos/art002e016354~orig.jpg' },
-  { name: '55206394005 D4B2519114 O', missionElapsedHours: 120.0756, description: '', photo: '/photos/55206394005_d4b2519114_o.jpg' },
-  { name: '55207787628 774Eb096Db O', missionElapsedHours: 122.095, description: '', photo: '/photos/55207787628_774eb096db_o.jpg' },
-  { name: '55207839868 Ece0677074 O', missionElapsedHours: 120.7922, description: '', photo: '/photos/55207839868_ece0677074_o.jpg' },
-  { name: '55207935871 Acaeaa8692 O', missionElapsedHours: 118.869, description: '', photo: '/photos/55207935871_acaeaa8692_o.jpg' },
-  { name: '55208327975 1D1E5Aa651 O', missionElapsedHours: 120.1128, description: '', photo: '/photos/55208327975_1d1e5aa651_o.jpg' },
-  { name: '55224193193 4D929Dc577 O', missionElapsedHours: 25.1578, description: '', photo: '/photos/55224193193_4d929dc577_o.jpg' },
-  { name: '55224434240 A7078727Ff O', missionElapsedHours: 22.5048, description: '', photo: '/photos/55224434240_a7078727ff_o.jpg' },
-  { name: 'Lunar Flyby', missionElapsedHours: 120.0881, description: '', photo: '/photos/lunar-flyby.jpg' },
+  { name: '55206394005 D4B2519114 O', missionElapsedHours: 120.0756, description: '', photo: '/photos/55206394005_d4b2519114_o.jpg', focalLength: 3 },
+  { name: '55207787628 774Eb096Db O', missionElapsedHours: 122.095, description: '', photo: '/photos/55207787628_774eb096db_o.jpg', focalLength: 3 },
+  { name: '55207839868 Ece0677074 O', missionElapsedHours: 120.7922, description: '', photo: '/photos/55207839868_ece0677074_o.jpg', focalLength: 3 },
+  { name: '55207935871 Acaeaa8692 O', missionElapsedHours: 118.869, description: '', photo: '/photos/55207935871_acaeaa8692_o.jpg', focalLength: 155 },
+  { name: '55208327975 1D1E5Aa651 O', missionElapsedHours: 120.1128, description: '', photo: '/photos/55208327975_1d1e5aa651_o.jpg', focalLength: 220 },
+  { name: '55224193193 4D929Dc577 O', missionElapsedHours: 25.1578, description: '', photo: '/photos/55224193193_4d929dc577_o.jpg', focalLength: 22 },
+  { name: '55224434240 A7078727Ff O', missionElapsedHours: 22.5048, description: '', photo: '/photos/55224434240_a7078727ff_o.jpg', focalLength: 400 },
+  { name: 'Lunar Flyby', missionElapsedHours: 120.0881, description: '', photo: '/photos/lunar-flyby.jpg', focalLength: 140 },
 ];
 
 export function getMissionElapsed(now: Date = new Date()): {

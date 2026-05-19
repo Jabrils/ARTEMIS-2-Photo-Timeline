@@ -47,9 +47,14 @@ export default function PhotoPanel() {
           </div>
           <div className="flex items-center justify-between px-3 py-1.5">
             <span className="text-[10px] font-mono text-gray-400 truncate pr-2">{stem}</span>
-            <span className="text-[10px] font-mono text-[#00d4ff]/70 whitespace-nowrap">
-              T+{activePhoto.missionElapsedHours}h
-            </span>
+            <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
+              {activePhoto.focalLength && (
+                <span className="text-[10px] font-mono text-gray-500">{activePhoto.focalLength}mm</span>
+              )}
+              <span className="text-[10px] font-mono text-[#00d4ff]/70">
+                T+{activePhoto.missionElapsedHours}h
+              </span>
+            </div>
           </div>
         </motion.div>
       )}
@@ -78,9 +83,14 @@ export default function PhotoPanel() {
               />
               <div className="flex items-center justify-between px-3 py-1.5 bg-[rgba(10,10,30,0.85)] rounded-b-lg border-x border-b border-[rgba(0,212,255,0.3)]">
                 <span className="text-[10px] font-mono text-gray-400 truncate pr-2">{stem}</span>
-                <span className="text-[10px] font-mono text-[#00d4ff]/70 whitespace-nowrap">
-                  T+{activePhoto.missionElapsedHours}h
-                </span>
+                <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
+                  {activePhoto.focalLength && (
+                    <span className="text-[10px] font-mono text-gray-500">{activePhoto.focalLength}mm</span>
+                  )}
+                  <span className="text-[10px] font-mono text-[#00d4ff]/70">
+                    T+{activePhoto.missionElapsedHours}h
+                  </span>
+                </div>
               </div>
             </div>
           </motion.div>

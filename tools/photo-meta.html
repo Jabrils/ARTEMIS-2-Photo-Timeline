@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artemis II — Photo Metadata Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js" type="module" id="exifr-module"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #07071a;
+      color: #ccc;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 260px;
+      min-width: 260px;
+      border-right: 1px solid rgba(0,212,255,0.2);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #sidebar h1 {
+      padding: 12px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #00d4ff;
+      border-bottom: 1px solid rgba(0,212,255,0.15);
+    }
+    .photo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.1s;
+    }
+    .photo-item:hover { background: rgba(0,212,255,0.07); }
+    .photo-item.active { background: rgba(0,212,255,0.13); border-left: 2px solid #00d4ff; }
+    .photo-item img {
+      width: 44px;
+      height: 32px;
+      object-fit: cover;
+      border-radius: 3px;
+      border: 1px solid rgba(0,212,255,0.15);
+      flex-shrink: 0;
+    }
+    .photo-item-name {
+      font-size: 9px;
+      color: #aaa;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    /* Main panel */
+    #main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Preview + compare row */
+    #preview-row {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(0,212,255,0.15);
+      align-items: flex-start;
+    }
+    #preview-img {
+      max-height: 200px;
+      max-width: 340px;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 1px solid rgba(0,212,255,0.25);
+      display: none;
+    }
+    #compare-img {
+      max-height: 200px;
+      max-width: 340px;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 1px solid rgba(255,140,0,0.25);
+      display: none;
+    }
+    #preview-info {
+      flex: 1;
+    }
+    #preview-info h2 {
+      font-size: 11px;
+      color: #00d4ff;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+    #compare-btn {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.3);
+      color: #00d4ff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+    #compare-btn:hover { background: rgba(0,212,255,0.18); }
+    #compare-label {
+      font-size: 9px;
+      color: #ff8c00;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* Search */
+    #search-bar {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(0,212,255,0.1);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #search {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.2);
+      color: #ccc;
+      padding: 4px 8px;
+      border-radius: 4px;
+      flex: 1;
+      outline: none;
+    }
+    #search:focus { border-color: rgba(0,212,255,0.5); }
+    #field-count { font-size: 10px; color: #555; }
+
+    /* Table */
+    #meta-table {
+      padding: 0 16px 24px;
+      overflow-y: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    td {
+      padding: 5px 8px;
+      vertical-align: top;
+    }
+    td:first-child {
+      width: 220px;
+      min-width: 220px;
+      color: #666;
+      font-size: 10px;
+      padding-right: 16px;
+      white-space: nowrap;
+    }
+    td:last-child {
+      color: #ddd;
+      font-size: 11px;
+      word-break: break-word;
+    }
+
+    /* Highlight classes */
+    .key-time td:first-child   { color: #00d4ff; }
+    .key-time td:last-child    { color: #fff; font-weight: bold; }
+    .key-offset td:first-child { color: #ff8c00; }
+    .key-offset td:last-child  { color: #ff8c00; font-weight: bold; }
+    .key-camera td:first-child { color: #00ff88; }
+    .key-camera td:last-child  { color: #00ff88; }
+    .key-caption td:first-child { color: #a0a0ff; }
+    .key-caption td:last-child  { color: #ccc; font-style: italic; }
+    .key-file td:first-child   { color: #888; }
+    .key-doc td:first-child    { color: #ff6b6b; }
+    .key-doc td:last-child     { color: #ff9999; }
+
+    /* Legend */
+    #legend {
+      display: flex;
+      gap: 14px;
+      padding: 8px 16px;
+      border-bottom: 1px solid rgba(0,212,255,0.1);
+      flex-wrap: wrap;
+    }
+    .legend-item { font-size: 9px; display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Empty state */
+    #empty {
+      padding: 48px 24px;
+      color: #444;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    /* Compare diff */
+    .diff-changed td:last-child { background: rgba(255,200,0,0.08); border-left: 2px solid #ffcc00; }
+    .diff-only td:last-child    { background: rgba(0,212,255,0.05); border-left: 2px solid #00d4ff; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>📡 Artemis II Photos</h1>
+  <div id="photo-list"></div>
+</div>
+
+<div id="main">
+  <div id="preview-row">
+    <img id="preview-img" alt="preview" />
+    <img id="compare-img" alt="compare" />
+    <div id="preview-info">
+      <h2 id="preview-name">← Select a photo</h2>
+      <div id="preview-quick"></div>
+      <button id="compare-btn" style="display:none">Pin for compare</button>
+      <div id="compare-label"></div>
+    </div>
+  </div>
+
+  <div id="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div> Timestamp</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff8c00"></div> UTC Offset</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div> Camera / Lens</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a0a0ff"></div> Caption / Notes</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div> Document ID</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#666"></div> File info</div>
+    <div id="field-count"></div>
+  </div>
+
+  <div id="search-bar">
+    <input id="search" type="text" placeholder="Filter fields..." />
+  </div>
+
+  <div id="meta-table">
+    <div id="empty">Select a photo from the sidebar to view its EXIF metadata.</div>
+    <table id="table" style="display:none"><tbody id="tbody"></tbody></table>
+  </div>
+</div>
+
+<script type="module">
+  import exifr from 'https://cdn.jsdelivr.net/npm/exifr/dist/full.esm.js';
+
+  const PHOTOS = [
+    '/photos/55193049251_43a64bf74d_o.jpg',
+    '/photos/55193054686_6ed51f4f15_o.jpg',
+    '/photos/55193206753_03e267f92b_o.jpg',
+    '/photos/55193337359_950011bf2d_o.jpg',
+    '/photos/55194789840_d7cf899d17_o.jpg',
+    '/photos/55195413602_c4306fea38_o.jpg',
+    '/photos/55197506830_a07d2d54ba_o.jpg',
+    '/photos/55197737178_9b35dbcb12_o.jpg',
+    '/photos/55199312161_f84ab3fd2e_o.jpg',
+    '/photos/55199431156_eb43ddc6be_o.jpg',
+    '/photos/55204753657_ff68ec545e_o.jpg',
+    '/photos/55206199989_da419a08f0_o.jpg',
+    '/photos/55206394005_d4b2519114_o.jpg',
+    '/photos/55207787628_774eb096db_o.jpg',
+    '/photos/55207839868_ece0677074_o.jpg',
+    '/photos/55207935871_acaeaa8692_o.jpg',
+    '/photos/55208327975_1d1e5aa651_o.jpg',
+    '/photos/55224193193_4d929dc577_o.jpg',
+    '/photos/55224434240_a7078727ff_o.jpg',
+    '/photos/NHQ202604070017~orig.jpg',
+    '/photos/art002e009166~orig.jpg',
+    '/photos/art002e009174~orig.jpg',
+    '/photos/art002e009210~orig.jpg',
+    '/photos/art002e016354~orig.jpg',
+    '/photos/lunar-flyby.jpg',
+  ];
+
+  // Key field classification
+  const TIME_KEYS   = /date|time|created|modified|digitized/i;
+  const OFFSET_KEYS = /offset.*time|timezone/i;
+  const CAMERA_KEYS = /make|model|lens|focal|aperture|exposure|iso|flash|white.balance|software|artist|copyright/i;
+  const CAPTION_KEYS = /caption|description|comment|subject|title|headline|keyword|instruction|credit|source|alt.text|preserved|raw.file|document.id|instance|original.doc|derived/i;
+  const FILE_KEYS   = /file|directory|size|permission|bits|color|encoding|compression|resolution|megapixel|image.width|image.height/i;
+  const DOC_KEYS    = /document.id|instance.id|original.doc/i;
+
+  function classifyKey(key) {
+    if (OFFSET_KEYS.test(key)) return 'key-offset';
+    if (TIME_KEYS.test(key))   return 'key-time';
+    if (DOC_KEYS.test(key))    return 'key-doc';
+    if (CAMERA_KEYS.test(key)) return 'key-camera';
+    if (CAPTION_KEYS.test(key)) return 'key-caption';
+    if (FILE_KEYS.test(key))   return 'key-file';
+    return '';
+  }
+
+  // State
+  let currentMeta = null;
+  let pinnedMeta  = null;
+  let pinnedPath  = null;
+  let currentPath = null;
+  let searchVal   = '';
+
+  // Build sidebar
+  const list = document.getElementById('photo-list');
+  PHOTOS.forEach(path => {
+    const name = path.split('/').pop();
+    const item = document.createElement('div');
+    item.className = 'photo-item';
+    item.dataset.path = path;
+    item.innerHTML = `<img src="${path}" loading="lazy" /><div class="photo-item-name">${name}</div>`;
+    item.addEventListener('click', () => loadPhoto(path));
+    list.appendChild(item);
+  });
+
+  // Load and display
+  async function loadPhoto(path) {
+    currentPath = path;
+    document.querySelectorAll('.photo-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.path === path);
+    });
+
+    const name = path.split('/').pop();
+    document.getElementById('preview-name').textContent = name;
+    const img = document.getElementById('preview-img');
+    img.src = path;
+    img.style.display = 'block';
+    document.getElementById('compare-btn').style.display = 'inline-block';
+
+    try {
+      const meta = await exifr.parse(path, { xmp: true, iptc: true, icc: false, jfif: false, ihdr: false, tiff: true, gps: true });
+      currentMeta = meta || {};
+      renderTable(currentMeta, pinnedMeta);
+
+      // Quick summary
+      const dt  = meta?.DateTimeOriginal || meta?.CreateDate || '';
+      const off = meta?.OffsetTimeOriginal || meta?.OffsetTime || '';
+      const cam = [meta?.Make, meta?.Model].filter(Boolean).join(' ');
+      const fl  = meta?.FocalLength ? `${meta.FocalLength}mm` : '';
+      document.getElementById('preview-quick').innerHTML =
+        `<div style="margin-top:6px;line-height:1.8;font-size:10px;color:#888">` +
+        (dt  ? `<span style="color:#00d4ff">${formatVal(dt)}</span>${off ? ` <span style="color:#ff8c00">${off}</span>` : ''}<br>` : '') +
+        (cam ? `<span style="color:#00ff88">${cam}</span>${fl ? ` · ${fl}` : ''}<br>` : '') +
+        `</div>`;
+    } catch(e) {
+      currentMeta = {};
+      document.getElementById('tbody').innerHTML = `<tr><td colspan="2" style="color:#f66;padding:12px">Failed to parse EXIF: ${e.message}</td></tr>`;
+    }
+  }
+
+  function formatVal(v) {
+    if (v instanceof Date) return v.toISOString().replace('T',' ').replace('Z',' UTC');
+    if (typeof v === 'object' && v !== null) return JSON.stringify(v).slice(0,120);
+    return String(v ?? '');
+  }
+
+  function renderTable(meta, compareMeta) {
+    const keys = Object.keys(meta);
+    document.getElementById('field-count').textContent = `${keys.length} fields`;
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('table').style.display = '';
+
+    const filter = searchVal.toLowerCase();
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+
+    keys.forEach(key => {
+      if (filter && !key.toLowerCase().includes(filter) && !formatVal(meta[key]).toLowerCase().includes(filter)) return;
+      const cls = classifyKey(key);
+      const val = formatVal(meta[key]);
+      const tr = document.createElement('tr');
+      tr.className = cls;
+
+      // Compare diff
+      if (compareMeta) {
+        const cval = compareMeta[key] !== undefined ? formatVal(compareMeta[key]) : null;
+        if (cval === null) tr.classList.add('diff-only');
+        else if (cval !== val) tr.classList.add('diff-changed');
+      }
+
+      const compareCell = compareMeta
+        ? `<td style="font-size:10px;color:${compareMeta[key] !== undefined ? (formatVal(compareMeta[key]) !== val ? '#ffcc00' : '#444') : '#00d4ff'};padding:5px 8px;word-break:break-word">
+            ${compareMeta[key] !== undefined ? formatVal(compareMeta[key]) : '—'}
+           </td>`
+        : '';
+
+      tr.innerHTML = `<td>${key}</td><td>${val}</td>${compareCell}`;
+      tbody.appendChild(tr);
+    });
+
+    // Show keys in compare but not in main
+    if (compareMeta) {
+      Object.keys(compareMeta).forEach(key => {
+        if (meta[key] !== undefined) return;
+        if (filter && !key.toLowerCase().includes(filter)) return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="color:#ff6b6b">${key}</td><td style="color:#444">—</td><td style="color:#ff9999;font-size:10px">${formatVal(compareMeta[key])}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  // Search
+  document.getElementById('search').addEventListener('input', e => {
+    searchVal = e.target.value;
+    if (currentMeta) renderTable(currentMeta, pinnedMeta);
+  });
+
+  // Pin for compare
+  document.getElementById('compare-btn').addEventListener('click', () => {
+    if (pinnedPath === currentPath) {
+      // Unpin
+      pinnedMeta  = null;
+      pinnedPath  = null;
+      document.getElementById('compare-img').style.display = 'none';
+      document.getElementById('compare-label').style.display = 'none';
+      document.getElementById('compare-btn').textContent = 'Pin for compare';
+      renderTable(currentMeta, null);
+    } else {
+      pinnedMeta  = { ...currentMeta };
+      pinnedPath  = currentPath;
+      const cimg = document.getElementById('compare-img');
+      cimg.src = currentPath;
+      cimg.style.display = 'block';
+      const label = document.getElementById('compare-label');
+      label.textContent = `Pinned: ${currentPath.split('/').pop()}`;
+      label.style.display = 'block';
+      document.getElementById('compare-btn').textContent = 'Unpin';
+      renderTable(currentMeta, pinnedMeta);
+    }
+  });
+</script>
+</body>
+</html>

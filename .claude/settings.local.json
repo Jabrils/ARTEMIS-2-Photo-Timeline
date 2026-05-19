@@ -15,7 +15,9 @@
       "Bash(exiftool \"public/photos/art002e009166~orig.jpg\" \"public/photos/art002e009174~orig.jpg\" \"public/photos/art002e009210~orig.jpg\" \"public/photos/art002e016354~orig.jpg\")",
       "Bash(exiftool \"public/photos/art002e016354~orig.jpg\")",
       "Bash(exiftool \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\\\\public\\\\photos\\\\55195413602_c4306fea38_o.jpg\")",
-      "Bash(exiftool \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\\\\public\\\\photos\\\\55193049251_43a64bf74d_o.jpg\")"
+      "Bash(exiftool \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\\\\public\\\\photos\\\\55193049251_43a64bf74d_o.jpg\")",
+      "Bash(curl -sL \"https://images-assets.nasa.gov/image/art002e004462/art002e004462~orig.jpg\" -o /tmp/art002e004462.jpg)",
+      "Bash(exiftool /tmp/art002e004462.jpg)"
     ]
   }
 }
