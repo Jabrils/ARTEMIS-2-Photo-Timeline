@@ -27,6 +27,8 @@ export interface Milestone {
   nasaId?: string;
   camera?: string;
   capturedAt?: string; // ISO UTC string
+  showInBoth?: boolean; // show under both Orion and Earth filters
+  title?: string; // EXIF Title/Headline when available
 }
 
 // Milestones are now populated at runtime from public/photos.json

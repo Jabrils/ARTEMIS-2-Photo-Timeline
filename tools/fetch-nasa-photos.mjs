@@ -24,7 +24,7 @@
  */
 
 import { execSync }                                       from 'child_process';
-import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync, unlinkSync, appendFileSync, mkdirSync } from 'fs';
 import { tmpdir }                                         from 'os';
 import { join, resolve }                                  from 'path';
 
@@ -33,9 +33,12 @@ const LAUNCH_EPOCH  = new Date('2026-04-01T22:35:00Z');
 const MISSION_END   = new Date('2026-04-11T00:08:00Z'); // T+217.53h
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const OUTPUT_PATH   = resolve('public/photos.json');
-const EXIF_DELAY_MS = 150;   // pause between EXIF downloads (be polite to NASA CDN)
-const RANGE_BYTES   = 131071; // 128KB — enough to capture EXIF in most JPEGs
+const OUTPUT_PATH        = resolve('public/photos.json');
+const REJECTED_DIR       = resolve('tools/rejected');
+const OUT_OF_WINDOW_PATH = resolve('tools/rejected/out-of-window.txt');
+const NO_EXIF_PATH       = resolve('tools/rejected/no-exif.txt');
+const EXIF_DELAY_MS      = 150;   // pause between EXIF downloads (be polite to NASA CDN)
+const RANGE_BYTES        = 131071; // 128KB — enough to capture EXIF in most JPEGs
 
 // ─── Flags ────────────────────────────────────────────────────────────────────
 const RESET    = process.argv.includes('--reset');
@@ -51,9 +54,59 @@ function loadManifest() {
   catch { return []; }
 }
 
+function loadRejectedIds(filePath) {
+  if (!existsSync(filePath)) return new Set();
+  return new Set(
+    readFileSync(filePath, 'utf-8')
+      .split('\n')
+      .map(l => l.trim())
+      // strip inline comments and blank lines; IDs never contain spaces
+      .filter(l => l && !l.startsWith('#'))
+      .map(l => l.split(/\s/)[0])
+  );
+}
+
+function loadRejected() {
+  mkdirSync(REJECTED_DIR, { recursive: true });
+  const outOfWindow = loadRejectedIds(OUT_OF_WINDOW_PATH);
+  const noExif      = loadRejectedIds(NO_EXIF_PATH);
+  return new Set([...outOfWindow, ...noExif]);
+}
+
+function appendOutOfWindow(entries) {
+  // entries: [{ nasaId, capturedAt }]
+  if (!entries.length) return;
+  mkdirSync(REJECTED_DIR, { recursive: true });
+  const isNew = !existsSync(OUT_OF_WINDOW_PATH);
+  const header = isNew ? '# Out-of-window IDs — captured outside the Artemis II mission window\n# Skip on future runs\n' : '';
+  const block = `\n# Run: ${new Date().toISOString()}\n` +
+    entries.map(({ nasaId, capturedAt }) =>
+      `${nasaId}  # ${capturedAt}`
+    ).join('\n') + '\n';
+  appendFileSync(OUT_OF_WINDOW_PATH, header + block);
+}
+
+function appendNoExif(nasaIds) {
+  // Includes NASA page URL so you can manually investigate (e.g. lunar flyby photos)
+  if (!nasaIds.length) return;
+  mkdirSync(REJECTED_DIR, { recursive: true });
+  const isNew = !existsSync(NO_EXIF_PATH);
+  const header = isNew
+    ? '# No-EXIF IDs — could not read capture date\n' +
+      '# Review manually: some may be mission photos worth adding\n' +
+      '# NASA page: https://images.nasa.gov/details/{ID}\n' +
+      '# To add manually: remove from this file and add to tools/nasa-ids.txt\n'
+    : '';
+  const block = `\n# Run: ${new Date().toISOString()}\n` +
+    nasaIds.map(id =>
+      `${id}  # https://images.nasa.gov/details/${id}`
+    ).join('\n') + '\n';
+  appendFileSync(NO_EXIF_PATH, header + block);
+}
+
 function elapsed(utcDate) {
-  return Math.round((utcDate.getTime() - LAUNCH_EPOCH.getTime()) / 360_000) / 10;
-  // rounds to 1 decimal place (nearest 0.1h)
+  // 4 decimal places ≈ 0.36s precision — avoids 88-photo clusters at T+0h
+  return Math.round((utcDate.getTime() - LAUNCH_EPOCH.getTime()) / 360) / 10000;
 }
 
 /**
@@ -87,9 +140,11 @@ function exifToUtc(exif, nasaId) {
     return new Date(iso + off);
   }
 
-  // Default: treat as UTC
-  const noTz = iso.replace(/[+-]\d{2}:\d{2}$/, '');
-  return new Date(noTz + 'Z');
+  // Default: apply offset if present in EXIF, otherwise treat as UTC
+  if (/[+-]\d{2}:\d{2}$/.test(iso)) return new Date(iso);
+  const off = exif.OffsetTimeOriginal || exif.OffsetTime || '';
+  if (off && /^[+-]\d{2}:\d{2}$/.test(off)) return new Date(iso + off);
+  return new Date(iso + 'Z');
 }
 
 /**
@@ -143,23 +198,31 @@ async function main() {
   const nasaIds = [...new Set(rawIds)]; // deduplicate
   console.log(`📋  Loaded ${nasaIds.length} IDs from ${IDS_FILE}\n`);
 
-  // ── 2. Load existing manifest ──────────────────────────────────────────────
+  // ── 2. Load existing manifest + reject lists ──────────────────────────────
   const existing    = loadManifest();
   const existingIds = new Set(existing.map(p => p.nasaId));
-  console.log(`📦  Existing manifest: ${existing.length} entries\n`);
+  const rejectedIds = loadRejected();
+  console.log(`📦  Existing manifest: ${existing.length} entries`);
+  console.log(`🚫  Reject lists:      ${rejectedIds.size} IDs (tools/rejected/)\n`);
 
   // ── 3. Process each ID ────────────────────────────────────────────────────
-  const results = [...existing];
-  const stats   = { added: 0, skipped: 0, outOfWindow: 0, noExif: 0 };
+  const results         = [...existing];
+  const newOutOfWindow  = []; // [{ nasaId, capturedAt }]
+  const newNoExif       = []; // [nasaId]
+  const stats           = { added: 0, skipped: 0, rejected: 0, outOfWindow: 0, noExif: 0 };
 
   for (let i = 0; i < nasaIds.length; i++) {
     const nasaId = nasaIds[i];
     const prefix = `[${String(i + 1).padStart(3)}/${nasaIds.length}] ${nasaId}`;
 
     if (existingIds.has(nasaId)) {
-      console.log(`${prefix} — already in manifest`);
       stats.skipped++;
-      continue;
+      continue; // silent — already shown in manifest count
+    }
+
+    if (rejectedIds.has(nasaId)) {
+      stats.rejected++;
+      continue; // silent — already known bad
     }
 
     const url = `https://images-assets.nasa.gov/image/${nasaId}/${nasaId}~orig.jpg`;
@@ -167,7 +230,8 @@ async function main() {
 
     const exif = await readExif(url, nasaId);
     if (!exif) {
-      process.stdout.write('⚠  no EXIF (skipped)\n');
+      process.stdout.write('⚠  no EXIF → tools/rejected/no-exif.txt\n');
+      newNoExif.push(nasaId);
       stats.noExif++;
       await sleep(EXIF_DELAY_MS);
       continue;
@@ -175,28 +239,34 @@ async function main() {
 
     const capturedAt = exifToUtc(exif, nasaId);
     if (!capturedAt || isNaN(capturedAt.getTime())) {
-      process.stdout.write('⚠  unreadable date (skipped)\n');
+      process.stdout.write('⚠  unreadable date → tools/rejected/no-exif.txt\n');
+      newNoExif.push(nasaId);
       stats.noExif++;
       await sleep(EXIF_DELAY_MS);
       continue;
     }
 
     if (capturedAt < LAUNCH_EPOCH || capturedAt > MISSION_END) {
-      process.stdout.write(`✗  out of window (${capturedAt.toISOString()})\n`);
+      process.stdout.write(`✗  out of window (${capturedAt.toISOString()}) → tools/rejected/out-of-window.txt\n`);
+      newOutOfWindow.push({ nasaId, capturedAt: capturedAt.toISOString() });
       stats.outOfWindow++;
       await sleep(EXIF_DELAY_MS);
       continue;
     }
 
     const missionElapsedHours = elapsed(capturedAt);
-    const focalLength  = exif.FocalLength ? Math.round(Number(exif.FocalLength)) : undefined;
+    const flParsed = parseFloat(String(exif.FocalLength ?? ''));
+    const focalLength = isFinite(flParsed) && flParsed > 0 ? Math.round(flParsed) : undefined;
     const camera       = [exif.Make, exif.Model].filter(Boolean).join(' ') || undefined;
     const description  = (exif['Caption-Abstract'] || '').slice(0, 400);
+    const rawTitle     = String(exif.Title || exif.Headline || exif.ObjectName || '').trim();
+    const title        = rawTitle && !/^[a-zA-Z0-9_\-~]+$/.test(rawTitle) ? rawTitle : undefined;
 
     results.push({
       nasaId,
       name: nasaId,
       missionElapsedHours,
+      title,
       description,
       photo: url,
       focalLength,
@@ -209,19 +279,27 @@ async function main() {
     await sleep(EXIF_DELAY_MS);
   }
 
-  // ── 4. Sort and write ──────────────────────────────────────────────────────
+  // ── 4. Sort and write manifest ─────────────────────────────────────────────
   results.sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
   writeFileSync(OUTPUT_PATH, JSON.stringify(results, null, 2));
+
+  // ── 5. Write reject files ─────────────────────────────────────────────────
+  appendOutOfWindow(newOutOfWindow);
+  appendNoExif(newNoExif);
 
   console.log(`
 ✅  Done.
     Added:           ${stats.added}
-    Skipped:         ${stats.skipped}  (already in manifest)
-    Out of window:   ${stats.outOfWindow}
-    No EXIF / error: ${stats.noExif}
+    Skipped:         ${stats.skipped}  (already in manifest — instant)
+    Pre-rejected:    ${stats.rejected}  (reject lists — instant)
+    Out of window:   ${stats.outOfWindow}  → tools/rejected/out-of-window.txt
+    No EXIF / error: ${stats.noExif}  → tools/rejected/no-exif.txt
     ─────────────────────────────
     Total in manifest: ${results.length}
-    Output: ${OUTPUT_PATH}
+    Output:  ${OUTPUT_PATH}
+
+    Review no-EXIF manually — some may be mission photos:
+    tools/rejected/no-exif.txt  (includes NASA page URL per entry)
 `);
 }
 

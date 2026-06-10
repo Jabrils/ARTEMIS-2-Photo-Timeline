@@ -31,7 +31,32 @@
       "Bash(tee /tmp/extracted-ids.txt)",
       "Bash(cd \"D:\\\\GitHub\\\\ARTEMIS-2-Photo-Timeline\" && cat /tmp/extracted-ids.txt | head -20 && echo \"...\" && cat /tmp/extracted-ids.txt | grep -v \"^art002\\\\|^NHQ\\\\|^iss\" | head -10)",
       "Bash(node -e ' *)",
-      "Bash(node tools/extract-ids.mjs)"
+      "Bash(node tools/extract-ids.mjs)",
+      "Bash(node tools/fetch-nasa-photos.mjs --ids=tools/nasa-ids.txt)",
+      "Bash(rm -f tools/nasa-ids-rejected.txt)",
+      "Bash(node --input-type=module)",
+      "Bash(node -e \"const f=require\\('fs'\\);const d=JSON.parse\\(f.readFileSync\\('public/photos.json','utf-8'\\)\\);console.log\\('entries:',d.length\\);console.log\\('first:',d[0]?.nasaId\\);console.log\\('last:',d[d.length-1]?.nasaId\\);\")",
+      "Bash(grep -h \"art002e021110\\\\|art002e010232\\\\|NHQ202604010310\\\\|art002e004411\" tools/rejected/no-exif.txt tools/rejected/out-of-window.txt)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/art002e009166/art002e009166~orig.jpg\" -o /tmp/test_fl.jpg)",
+      "Bash(exiftool -json /tmp/test_fl.jpg)",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);console.log\\('FocalLength:',JSON.stringify\\(j[0].FocalLength\\),'type:',typeof j[0].FocalLength\\);}\\)\")",
+      "Bash(node tools/diagnose-nav.mjs)",
+      "Bash(node tools/patch-elapsed-hours.mjs)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/NHQ202604100214/NHQ202604100214~orig.jpg\" -o /tmp/nhq.jpg)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/DSC_3398/DSC_3398~orig.jpg\" -o /tmp/dsc.jpg)",
+      "Bash(exiftool -json /tmp/nhq.jpg /tmp/dsc.jpg)",
+      "Bash(node tools/patch-other-offsets.mjs)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/NHQ202604010200/NHQ202604010200~orig.jpg\" -o /tmp/nhq200.jpg)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/NHQ202604010201/NHQ202604010201~orig.jpg\" -o /tmp/nhq201.jpg)",
+      "Bash(exiftool -json /tmp/nhq200.jpg /tmp/nhq201.jpg)",
+      "Bash(exiftool /tmp/nhq200.jpg)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('public/photos.json','utf-8'\\)\\);const e=d.find\\(p=>p.nasaId==='NHQ202604010267'\\);console.log\\(e?JSON.stringify\\(e,null,2\\):'NOT IN MANIFEST'\\)\")",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/art002e023506/art002e023506~orig.jpg\" -o /tmp/test_title.jpg)",
+      "Bash(exiftool /tmp/test_title.jpg)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/NHQ202604070017/NHQ202604070017~orig.jpg\" -o /tmp/test_title2.jpg)",
+      "Bash(exiftool /tmp/test_title2.jpg)",
+      "Bash(curl -sL --range 0-131071 \"https://images-assets.nasa.gov/image/art002e009007/art002e009007~orig.jpg\" -o /tmp/check_title.jpg)",
+      "Bash(exiftool /tmp/check_title.jpg)"
     ]
   }
 }

@@ -61,12 +61,14 @@ interface MissionStore {
   dsnStations: DsnStation[];
   cameraMode: CameraMode;
   chatOpen: boolean;
-  hoveredMilestoneHours: number | null;
+  hoveredMilestoneHours: number | null;     // progress bar hover → shows tooltip + 3D marker
+  eventsHoveredHours: number | null;        // events panel hover → 3D marker only
   spaceWeather: SpaceWeatherState;
   alerts: Alert[];
   timeControl: TimeControl;
   utcOffset: number;
   milestones: Milestone[];
+  photoFilter: 'all' | 'orion' | 'earth';
 
   setOemData: (data: StateVector[]) => void;
   setMoonPosition: (pos: { x: number; y: number; z: number }) => void;
@@ -76,6 +78,7 @@ interface MissionStore {
   toggleChat: () => void;
   setLoading: (loading: boolean) => void;
   setHoveredMilestoneHours: (hours: number | null) => void;
+  setEventsHoveredHours: (hours: number | null) => void;
   setSpaceWeather: (data: SpaceWeatherState) => void;
   addAlert: (alert: Omit<Alert, 'id'>) => void;
   dismissAlert: (id: string) => void;
@@ -84,6 +87,7 @@ interface MissionStore {
   setSimTime: (epochMs: number) => void;
   setUtcOffset: (n: number) => void;
   setMilestones: (milestones: Milestone[]) => void;
+  setPhotoFilter: (filter: 'all' | 'orion' | 'earth') => void;
 }
 
 export const useMissionStore = create<MissionStore>((set) => ({
@@ -99,6 +103,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
   cameraMode: 'free',
   chatOpen: false,
   hoveredMilestoneHours: null,
+  eventsHoveredHours: null,
   spaceWeather: {
     kpIndex: 3,
     solarWindSpeed: 400,
@@ -114,6 +119,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
   timeControl: { mode: 'replay' as TimeMode, rate: 1000, simEpochMs: LAUNCH_EPOCH.getTime() },
   utcOffset: 0,
   milestones: [],
+  photoFilter: 'orion',
 
   setOemData: (data) => set({ oemData: data, isLoading: false }),
   setMoonPosition: (pos) => set({ moonPosition: pos }),
@@ -124,6 +130,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
   toggleChat: () => set((prev) => ({ chatOpen: !prev.chatOpen })),
   setLoading: (loading) => set({ isLoading: loading }),
   setHoveredMilestoneHours: (hours) => set({ hoveredMilestoneHours: hours }),
+  setEventsHoveredHours: (hours) => set({ eventsHoveredHours: hours }),
   setSpaceWeather: (data) => set({ spaceWeather: data }),
   addAlert: (alert) =>
     set((prev) => {
@@ -165,4 +172,5 @@ export const useMissionStore = create<MissionStore>((set) => ({
     })),
   setUtcOffset: (n) => set({ utcOffset: Math.max(-12, Math.min(14, n)) }),
   setMilestones: (milestones) => set({ milestones }),
+  setPhotoFilter: (photoFilter) => set({ photoFilter }),
 }));

@@ -16,15 +16,22 @@ export default function MissionEventsPanel() {
   const alerts = useMissionStore((s) => s.alerts);
   const dismissAlert = useMissionStore((s) => s.dismissAlert);
   const setHoveredMilestoneHours = useMissionStore((s) => s.setHoveredMilestoneHours);
+  const setEventsHoveredHours    = useMissionStore((s) => s.setEventsHoveredHours);
   const setSimTime = useMissionStore((s) => s.setSimTime);
   const setTimeMode = useMissionStore((s) => s.setTimeMode);
-  const milestones = useMissionStore((s) => s.milestones);
+  const milestones    = useMissionStore((s) => s.milestones);
+  const photoFilter   = useMissionStore((s) => s.photoFilter);
   const { totalMs } = useMission();
   const elapsedHours = totalMs / 3_600_000;
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const currentMilestoneRef = useRef<HTMLDivElement>(null);
 
-  const SORTED_MILESTONES = milestones; // already sorted by usePhotosInit
+  const isOrion = (nasaId?: string) => !!nasaId?.startsWith('art002');
+  const SORTED_MILESTONES = milestones.filter(m => {
+    if (!m.photo || photoFilter === 'all') return true;
+    if (m.showInBoth) return true;
+    return photoFilter === 'orion' ? isOrion(m.nasaId) : !isOrion(m.nasaId);
+  });
 
   // Find current milestone index
   let currentIdx = 0;
@@ -83,6 +90,15 @@ export default function MissionEventsPanel() {
   const handleMilestoneLeave = useCallback(() => {
     setHoveredMilestoneHours(null);
   }, [setHoveredMilestoneHours]);
+
+  // Photo hover — shows 3D marker only, no progress bar tooltip
+  const handlePhotoHover = useCallback((hours: number) => {
+    setEventsHoveredHours(hours);
+  }, [setEventsHoveredHours]);
+
+  const handlePhotoLeave = useCallback(() => {
+    setEventsHoveredHours(null);
+  }, [setEventsHoveredHours]);
 
   return (
     <div className="relative pointer-events-auto">
@@ -193,7 +209,11 @@ export default function MissionEventsPanel() {
 
                         {/* Always-visible photo */}
                         {m.photo && (
-                          <div className="px-2 pb-2">
+                          <div
+                            className="px-2 pb-2"
+                            onMouseEnter={() => handlePhotoHover(m.missionElapsedHours)}
+                            onMouseLeave={handlePhotoLeave}
+                          >
                             <img
                               src={m.photo}
                               alt={m.name}

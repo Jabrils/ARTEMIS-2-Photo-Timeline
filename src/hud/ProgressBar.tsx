@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMission } from '../hooks/useMission';
 import { useMissionStore } from '../store/mission-store';
@@ -7,6 +7,19 @@ import { MISSION_DURATION_HOURS, LAUNCH_EPOCH } from '../data/mission-config';
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const TOTAL_MISSION_HOURS = MISSION_DURATION_HOURS;
+
+function isOrion(nasaId?: string) { return !!nasaId?.startsWith('art002'); }
+
+function applyPhotoFilter<T extends { nasaId?: string; photo?: string; showInBoth?: boolean }>(
+  items: T[], filter: 'all' | 'orion' | 'earth'
+): T[] {
+  if (filter === 'all') return items;
+  return items.filter(m => {
+    if (!m.photo) return true;          // non-photo milestones always shown
+    if (m.showInBoth) return true;      // splashdown etc — relevant to both views
+    return filter === 'orion' ? isOrion(m.nasaId) : !isOrion(m.nasaId);
+  });
+}
 
 export default function ProgressBar() {
   const { progress, totalMs } = useMission();
@@ -17,13 +30,18 @@ export default function ProgressBar() {
   const simEpochMs = useMissionStore((s) => s.timeControl.simEpochMs);
   const utcOffset = useMissionStore((s) => s.utcOffset);
   const setUtcOffset = useMissionStore((s) => s.setUtcOffset);
-  const milestones = useMissionStore((s) => s.milestones);
+  const milestones    = useMissionStore((s) => s.milestones);
+  const photoFilter   = useMissionStore((s) => s.photoFilter);
+  const setPhotoFilter = useMissionStore((s) => s.setPhotoFilter);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [photoNavIndex, setPhotoNavIndex] = useState<number | null>(null);
+  const isPhotoNavRef = useRef(false);
 
   const elapsedHours = totalMs / 3_600_000;
 
-  const { milestoneData, currentIndex, photoMilestones, currentPhotoIndex } = useMemo(() => {
-    const sorted = [...milestones].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
+  const { milestoneData, currentIndex, photoMilestones, derivedPhotoIndex } = useMemo(() => {
+    const filtered = applyPhotoFilter(milestones, photoFilter);
+    const sorted = [...filtered].sort((a, b) => a.missionElapsedHours - b.missionElapsedHours);
 
     const data = sorted.map((m, i) => {
       const position = (m.missionElapsedHours / TOTAL_MISSION_HOURS) * 100;
@@ -42,16 +60,44 @@ export default function ProgressBar() {
     }
 
     const photos = data.filter((m) => m.photo);
-    let photoIdx = 0;
-    for (let i = photos.length - 1; i >= 0; i--) {
-      if (elapsedHours >= photos[i].missionElapsedHours) {
-        photoIdx = i;
-        break;
+
+    // Match PhotoPanel: find closest photo within ±0.5h of current time.
+    // Falls back to "last photo before current time" when no photo is in view.
+    let derivedPhotoIdx = 0;
+    let bestDelta = Infinity;
+    let foundInWindow = false;
+    for (let i = 0; i < photos.length; i++) {
+      const delta = Math.abs(elapsedHours - photos[i].missionElapsedHours);
+      if (delta <= 0.5 && delta < bestDelta) {
+        bestDelta = delta;
+        derivedPhotoIdx = i;
+        foundInWindow = true;
+      }
+    }
+    if (!foundInWindow) {
+      for (let i = photos.length - 1; i >= 0; i--) {
+        if (elapsedHours >= photos[i].missionElapsedHours) {
+          derivedPhotoIdx = i;
+          break;
+        }
       }
     }
 
-    return { milestoneData: data, currentIndex: idx, photoMilestones: photos, currentPhotoIndex: photoIdx };
-  }, [elapsedHours, milestones]);
+    return { milestoneData: data, currentIndex: idx, photoMilestones: photos, derivedPhotoIndex: derivedPhotoIdx };
+  }, [elapsedHours, milestones, photoFilter]);
+
+  // Reset explicit nav index when the user changes time from an external source
+  // (scrubbing, clicking a milestone dot, etc.) — but not from our own nav buttons
+  useEffect(() => {
+    if (isPhotoNavRef.current) {
+      isPhotoNavRef.current = false;
+      return;
+    }
+    setPhotoNavIndex(null);
+  }, [simEpochMs]);
+
+  // Use explicit index from ← → buttons; fall back to derived from elapsed time
+  const currentPhotoIndex = photoNavIndex ?? derivedPhotoIndex;
 
   // Compute external hover index from MissionEventsPanel
   const externalHoveredIndex = externalHoveredHours != null
@@ -77,6 +123,8 @@ export default function ProgressBar() {
   function handlePhotoNav(index: number) {
     const target = photoMilestones[index];
     if (!target) return;
+    isPhotoNavRef.current = true;
+    setPhotoNavIndex(index);
     setTimeMode('sim');
     setSimTime(LAUNCH_EPOCH.getTime() + target.missionElapsedHours * 3_600_000);
   }
@@ -93,7 +141,24 @@ export default function ProgressBar() {
 
   return (
     <div className="bg-[rgba(10,10,30,0.7)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg px-3 sm:px-4 py-2 sm:py-3 min-w-0 col-span-2 sm:col-span-1 sm:flex-1">
-      <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Mission Progress</div>
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-[10px] uppercase tracking-wider text-gray-400">Mission Progress</div>
+        <div className="flex items-center gap-1">
+          {(['all', 'orion', 'earth'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setPhotoFilter(f)}
+              className={`px-1.5 py-0.5 rounded text-[9px] font-mono border transition-colors ${
+                photoFilter === f
+                  ? 'text-[#00d4ff] border-[rgba(0,212,255,0.5)] bg-[rgba(0,212,255,0.1)]'
+                  : 'text-gray-500 border-[rgba(255,255,255,0.1)] hover:text-gray-300 hover:border-[rgba(255,255,255,0.2)]'
+              }`}
+            >
+              {f === 'all' ? 'All' : f === 'orion' ? '🚀 Orion' : '🌍 Earth'}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="flex items-center gap-2">
         {/* Track wrapper — relative for markers, inner overflow-hidden for fill */}
         <div className="flex-1 relative h-2">
@@ -182,14 +247,14 @@ export default function ProgressBar() {
         </span>
       </div>
       {/* Wall clock + elapsed info row */}
-      <div className="flex items-center gap-1.5 mt-1">
+      <div className="flex items-center gap-1 mt-1">
         <button
           onClick={() => setUtcOffset(utcOffset - 1)}
           disabled={utcOffset <= -12}
-          className="text-gray-500 hover:text-[#00d4ff] disabled:opacity-30 font-mono text-[10px] px-0.5 leading-none transition-colors"
+          className="px-1.5 py-0.5 rounded font-mono text-[11px] text-gray-400 border border-[rgba(255,255,255,0.15)] hover:text-[#00d4ff] hover:border-[rgba(0,212,255,0.4)] hover:bg-[rgba(0,212,255,0.08)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           title="Decrease UTC offset"
         >−</button>
-        <span className="font-mono text-[9px] sm:text-[10px] text-[#00d4ff]/80 tabular-nums whitespace-nowrap">
+        <span className="font-mono text-[9px] sm:text-[10px] text-[#00d4ff]/80 tabular-nums whitespace-nowrap px-0.5">
           {(() => {
             const d = new Date(simEpochMs + utcOffset * 3_600_000);
             const mon = MONTHS[d.getUTCMonth()];
@@ -203,38 +268,34 @@ export default function ProgressBar() {
         <button
           onClick={() => setUtcOffset(utcOffset + 1)}
           disabled={utcOffset >= 14}
-          className="text-gray-500 hover:text-[#00d4ff] disabled:opacity-30 font-mono text-[10px] px-0.5 leading-none transition-colors"
+          className="px-1.5 py-0.5 rounded font-mono text-[11px] text-gray-400 border border-[rgba(255,255,255,0.15)] hover:text-[#00d4ff] hover:border-[rgba(0,212,255,0.4)] hover:bg-[rgba(0,212,255,0.08)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           title="Increase UTC offset"
         >+</button>
-        <span className="text-gray-600 font-mono text-[9px]">·</span>
+        <span className="text-gray-600 font-mono text-[9px] px-0.5">·</span>
         <span className="font-mono text-[9px] sm:text-[10px] text-gray-500 tabular-nums whitespace-nowrap">
           T+{elapsedHours.toFixed(1)}h / {TOTAL_MISSION_HOURS.toFixed(1)}h ({progress.toFixed(1)}%)
         </span>
       </div>
 
-      {/* Next milestone countdown + photo nav arrows */}
-      <div className="flex items-center gap-2 mt-1">
+      {/* Photo nav arrows + countdown */}
+      <div className="flex items-center gap-1.5 mt-1">
         <button
           onClick={() => handlePhotoNav(currentPhotoIndex - 1)}
           disabled={currentPhotoIndex === 0}
-          className="text-[#00d4ff] font-mono text-xs px-1 leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:text-white transition-colors"
+          className="px-2 py-0.5 rounded font-mono text-sm text-[#00d4ff] border border-[rgba(0,212,255,0.3)] hover:bg-[rgba(0,212,255,0.1)] hover:border-[rgba(0,212,255,0.6)] hover:text-white disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           aria-label="Previous photo"
-        >
-          ←
-        </button>
-        <div className="flex-1 text-[9px] sm:text-[10px] text-[#00d4ff]/70 truncate">
+        >←</button>
+        <button
+          onClick={() => handlePhotoNav(currentPhotoIndex + 1)}
+          disabled={currentPhotoIndex === photoMilestones.length - 1}
+          className="px-2 py-0.5 rounded font-mono text-sm text-[#00d4ff] border border-[rgba(0,212,255,0.3)] hover:bg-[rgba(0,212,255,0.1)] hover:border-[rgba(0,212,255,0.6)] hover:text-white disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next photo"
+        >→</button>
+        <div className="text-[9px] sm:text-[10px] text-[#00d4ff]/60 truncate">
           {nextMilestone && countdown
             ? `Next: ${nextMilestone.name} in ${countdown}`
             : 'Mission Complete'}
         </div>
-        <button
-          onClick={() => handlePhotoNav(currentPhotoIndex + 1)}
-          disabled={currentPhotoIndex === photoMilestones.length - 1}
-          className="text-[#00d4ff] font-mono text-xs px-1 leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:text-white transition-colors"
-          aria-label="Next photo"
-        >
-          →
-        </button>
       </div>
     </div>
   );

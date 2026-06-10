@@ -4,18 +4,21 @@ import { LAUNCH_EPOCH, SCALE_FACTOR } from '../data/mission-config';
 import { lagrangeInterpolate } from '../data/interpolator';
 
 export default function MilestoneMarker() {
-  const hoveredHours = useMissionStore((s) => s.hoveredMilestoneHours);
-  const oemData      = useMissionStore((s) => s.oemData);
-  const milestones   = useMissionStore((s) => s.milestones);
+  const hoveredHours       = useMissionStore((s) => s.hoveredMilestoneHours);
+  const eventsHoveredHours = useMissionStore((s) => s.eventsHoveredHours);
+  const oemData            = useMissionStore((s) => s.oemData);
+  const milestones         = useMissionStore((s) => s.milestones);
+
+  const activeHours = hoveredHours ?? eventsHoveredHours;
 
   const marker = useMemo(() => {
-    if (hoveredHours === null || !oemData || oemData.length === 0) return null;
+    if (activeHours === null || !oemData || oemData.length === 0) return null;
 
-    const targetEpochMs = LAUNCH_EPOCH.getTime() + hoveredHours * 3_600_000;
+    const targetEpochMs = LAUNCH_EPOCH.getTime() + activeHours * 3_600_000;
     const state = lagrangeInterpolate(oemData, targetEpochMs);
     if (!state) return null;
 
-    const milestone = milestones.find((m) => m.missionElapsedHours === hoveredHours);
+    const milestone = milestones.find((m) => m.missionElapsedHours === activeHours);
 
     return {
       position: [
@@ -26,7 +29,7 @@ export default function MilestoneMarker() {
       name: milestone?.name ?? '',
       photo: milestone?.photo,
     };
-  }, [hoveredHours, oemData, milestones]);
+  }, [activeHours, oemData, milestones]);
 
   if (!marker) return null;
 
