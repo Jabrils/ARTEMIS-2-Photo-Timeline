@@ -1,6 +1,12 @@
+import { useMissionStore } from '../store/mission-store';
+
 export default function PromoWidget() {
+  const cameraMode = useMissionStore((s) => s.cameraMode);
+  const bottomClass = cameraMode === 'follow-orion'
+    ? 'bottom-60 right-2 sm:bottom-80 sm:right-4'
+    : 'bottom-60 right-2 sm:bottom-64 sm:right-4';
   return (
-    <div className="absolute bottom-60 right-2 sm:bottom-64 sm:right-4 w-56 sm:w-64 pointer-events-auto z-[var(--z-hud)] bg-[rgba(10,10,30,0.85)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg overflow-hidden">
+    <div className={`absolute ${bottomClass} w-56 sm:w-64 pointer-events-auto z-[var(--z-hud)] bg-[rgba(10,10,30,0.85)] backdrop-blur-sm border border-[rgba(0,212,255,0.2)] rounded-lg overflow-hidden`}>
       <div className="px-3 pt-2 pb-2">
         <p className="text-[10px] text-gray-300 leading-snug">
           Like this tool? Support my work by{' '}

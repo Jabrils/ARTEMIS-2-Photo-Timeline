@@ -105,11 +105,27 @@ function computePresetCamera(oemData: StateVector[], direction: THREE.Vector3, i
   return { camPos, target: bbox.center.clone(), cameraUp: bbox.cameraUp.clone() };
 }
 
+function computeFollowOrionLookAt(
+  target: 'forward' | 'moon' | 'earth',
+  orionPos: THREE.Vector3,
+  velocity: THREE.Vector3,
+): THREE.Vector3 {
+  if (target === 'earth') return new THREE.Vector3(0, 0, 0);
+  if (target === 'moon') {
+    const moon = useMissionStore.getState().moonPosition;
+    if (moon) return new THREE.Vector3(moon.x, moon.y, moon.z); // already in scene units
+  }
+  // 'forward' — look along velocity vector (direction of travel)
+  const velDir = velocity.clone().normalize();
+  return orionPos.clone().addScaledVector(velDir, 10);
+}
+
 export default function CameraController() {
   const controlsRef = useRef<any>(null);
   const { camera } = useThree();
   const cameraMode = useMissionStore((s) => s.cameraMode);
   const setCameraMode = useMissionStore((s) => s.setCameraMode);
+  const followOrionLookAt = useMissionStore((s) => s.followOrionLookAt);
   const isMobile = useIsMobile();
   const hasAutoFit = useRef(false);
 
@@ -164,11 +180,12 @@ export default function CameraController() {
       case 'follow-orion': {
         const sc = useMissionStore.getState().spacecraft;
         const orionPos = new THREE.Vector3(sc.x / SCALE_FACTOR, sc.y / SCALE_FACTOR, sc.z / SCALE_FACTOR);
-        // Offset camera behind and above Orion relative to orbital normal
-        const offset = bbox.normal.clone().multiplyScalar(3)
-          .add(new THREE.Vector3(sc.vx, sc.vy, sc.vz).normalize().multiplyScalar(-2));
+        const vel = new THREE.Vector3(sc.vx, sc.vy, sc.vz);
+        const offset = bbox.normal.clone().multiplyScalar(8)
+          .add(vel.clone().normalize().multiplyScalar(-5))
+          .addScaledVector(bbox.cameraUp, -5);
         targetPos.current.copy(orionPos).add(offset);
-        targetLookAt.current.copy(orionPos);
+        targetLookAt.current.copy(computeFollowOrionLookAt(followOrionLookAt, orionPos, vel));
         camera.up.copy(bbox.cameraUp);
         break;
       }
@@ -211,7 +228,7 @@ export default function CameraController() {
         break;
       }
     }
-  }, [cameraMode, isMobile, camera]);
+  }, [cameraMode, followOrionLookAt, isMobile, camera]);
 
   useFrame(() => {
     if (cameraMode === 'free') return;
@@ -223,10 +240,13 @@ export default function CameraController() {
         const sc = useMissionStore.getState().spacecraft;
         const bbox = computeTrajectoryBBox(oemData);
         const orionPos = new THREE.Vector3(sc.x / SCALE_FACTOR, sc.y / SCALE_FACTOR, sc.z / SCALE_FACTOR);
-        const offset = bbox.normal.clone().multiplyScalar(3)
-          .add(new THREE.Vector3(sc.vx, sc.vy, sc.vz).normalize().multiplyScalar(-2));
+        const vel = new THREE.Vector3(sc.vx, sc.vy, sc.vz);
+        const offset = bbox.normal.clone().multiplyScalar(8)
+          .add(vel.clone().normalize().multiplyScalar(-5))
+          .addScaledVector(bbox.cameraUp, -5);
         targetPos.current.copy(orionPos).add(offset);
-        targetLookAt.current.copy(orionPos);
+        const lookAtMode = useMissionStore.getState().followOrionLookAt;
+        targetLookAt.current.copy(computeFollowOrionLookAt(lookAtMode, orionPos, vel));
       }
     }
 

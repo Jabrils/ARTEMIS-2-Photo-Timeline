@@ -17,6 +17,7 @@ export interface SpacecraftState {
 }
 
 export type CameraMode = 'free' | 'follow-orion' | 'earth-view' | 'moon-view';
+export type FollowOrionLookAt = 'forward' | 'moon' | 'earth';
 
 // Space weather types
 export type AlertSeverity = 'info' | 'nominal' | 'caution' | 'warning';
@@ -60,6 +61,7 @@ interface MissionStore {
   spacecraft: SpacecraftState;
   dsnStations: DsnStation[];
   cameraMode: CameraMode;
+  followOrionLookAt: FollowOrionLookAt;
   chatOpen: boolean;
   hoveredMilestoneHours: number | null;     // progress bar hover → shows tooltip + 3D marker
   eventsHoveredHours: number | null;        // events panel hover → 3D marker only
@@ -75,6 +77,7 @@ interface MissionStore {
   setSpacecraft: (state: Partial<SpacecraftState>) => void;
   setDsnStations: (stations: DsnStation[]) => void;
   setCameraMode: (mode: CameraMode) => void;
+  setFollowOrionLookAt: (target: FollowOrionLookAt) => void;
   toggleChat: () => void;
   setLoading: (loading: boolean) => void;
   setHoveredMilestoneHours: (hours: number | null) => void;
@@ -101,6 +104,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
   },
   dsnStations: [],
   cameraMode: 'free',
+  followOrionLookAt: 'forward',
   chatOpen: false,
   hoveredMilestoneHours: null,
   eventsHoveredHours: null,
@@ -127,6 +131,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
     set((prev) => ({ spacecraft: { ...prev.spacecraft, ...state } })),
   setDsnStations: (stations) => set({ dsnStations: stations }),
   setCameraMode: (mode) => set({ cameraMode: mode }),
+  setFollowOrionLookAt: (target) => set({ followOrionLookAt: target }),
   toggleChat: () => set((prev) => ({ chatOpen: !prev.chatOpen })),
   setLoading: (loading) => set({ isLoading: loading }),
   setHoveredMilestoneHours: (hours) => set({ hoveredMilestoneHours: hours }),
